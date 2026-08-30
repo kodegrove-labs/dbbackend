@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { db } from '../db';
-import { users, sessions, verificationTokens, apiKeys } from '../db/schema';
+import { users, sessions, verificationTokens, apiKeys, passwordResetTokens, emailMessages } from '../db/schema';
 import { requireAuth, AuthRequest } from '../middleware/auth';
 import { eq } from 'drizzle-orm';
 
@@ -8,7 +8,7 @@ import crypto from 'crypto';
 
 const router = Router();
 
-const tableMap: Record<string, any> = { users, sessions, verificationTokens, apiKeys };
+const tableMap: Record<string, any> = { users, sessions, verificationTokens, apiKeys, passwordResetTokens, emailMessages };
 
 router.use(requireAuth);
 
@@ -27,6 +27,8 @@ router.get('/db-dump', async (req: AuthRequest, res: Response) => {
       const allSessions = await db.select().from(sessions);
       const allTokens = await db.select().from(verificationTokens);
       const allApiKeys = await db.select().from(apiKeys);
+      const allPasswordResetTokens = await db.select().from(passwordResetTokens);
+      const allEmailMessages = await db.select().from(emailMessages);
       
       res.json({
         success: true,
@@ -34,13 +36,17 @@ router.get('/db-dump', async (req: AuthRequest, res: Response) => {
         users: allUsers,
         sessions: allSessions,
         verificationTokens: allTokens,
-        apiKeys: allApiKeys
+        apiKeys: allApiKeys,
+        passwordResetTokens: allPasswordResetTokens,
+        emailMessages: allEmailMessages
       });
     } else {
       const myUser = await db.select().from(users).where(eq(users.id, userId));
       const mySessions = await db.select().from(sessions).where(eq(sessions.user_id, userId));
       const myTokens = await db.select().from(verificationTokens).where(eq(verificationTokens.user_id, userId));
       const myApiKeys = await db.select().from(apiKeys).where(eq(apiKeys.user_id, userId));
+      const myPasswordResetTokens = await db.select().from(passwordResetTokens).where(eq(passwordResetTokens.user_id, userId));
+      const myEmailMessages = await db.select().from(emailMessages).where(eq(emailMessages.user_id, userId));
 
       res.json({
         success: true,
@@ -48,7 +54,9 @@ router.get('/db-dump', async (req: AuthRequest, res: Response) => {
         users: myUser,
         sessions: mySessions,
         verificationTokens: myTokens,
-        apiKeys: myApiKeys
+        apiKeys: myApiKeys,
+        passwordResetTokens: myPasswordResetTokens,
+        emailMessages: myEmailMessages
       });
     }
   } catch (error: any) {

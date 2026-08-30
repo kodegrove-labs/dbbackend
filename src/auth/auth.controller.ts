@@ -97,11 +97,51 @@ router.get('/me', requireAuth, async (req: AuthRequest, res: Response) => {
   const [user] = await db.select({
     id: users.id,
     email: users.email,
+    first_name: users.first_name,
+    last_name: users.last_name,
+    avatar_url: users.avatar_url,
+    role: users.role,
+    last_sign_in_at: users.last_sign_in_at,
     email_verified: users.email_verified,
-    created_at: users.created_at
+    created_at: users.created_at,
+    metadata: users.metadata
   }).from(users).where(eq(users.id, req.user.id)).limit(1);
   
   res.json({ user });
+});
+
+router.put('/me', requireAuth, async (req: AuthRequest, res: Response) => {
+  if (!req.user) return;
+  try {
+    const updateSchema = z.object({
+      first_name: z.string().optional(),
+      last_name: z.string().optional(),
+      avatar_url: z.string().url().optional().or(z.literal('')),
+    });
+    const data = updateSchema.parse(req.body);
+    
+    // Convert empty string to null for avatar
+    if (data.avatar_url === '') data.avatar_url = undefined;
+
+    const [updatedUser] = await db.update(users)
+      .set({
+        ...data,
+        updated_at: new Date()
+      })
+      .where(eq(users.id, req.user.id))
+      .returning({
+        id: users.id,
+        email: users.email,
+        first_name: users.first_name,
+        last_name: users.last_name,
+        avatar_url: users.avatar_url,
+        role: users.role
+      });
+
+    res.json({ message: 'Profile updated successfully', user: updatedUser });
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
 });
 
 export default router;

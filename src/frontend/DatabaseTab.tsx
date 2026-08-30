@@ -183,7 +183,7 @@ export default function DatabaseTab() {
                 <span className="text-sm font-normal text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">{data.users?.length || 0}</span>
               </h3>
               {data.isAdmin && (
-                <button onClick={() => openModal('add', 'users', { email: '', password_hash: '', email_verified: false, role: 'user', auth_provider: 'email' })} className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800">
+                <button onClick={() => openModal('add', 'users', { email: '', first_name: '', last_name: '', password_hash: '', email_verified: false, role: 'user', auth_provider: 'email' })} className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800">
                   <Plus className="w-4 h-4" /> Add User
                 </button>
               )}
@@ -195,24 +195,20 @@ export default function DatabaseTab() {
                     <tr className="group">
                       <SortableHeader table="users" sortKey="id" label="ID" className="rounded-tl-lg" />
                       <SortableHeader table="users" sortKey="email" label="Email" />
+                      <SortableHeader table="users" sortKey="first_name" label="Name" />
                       <SortableHeader table="users" sortKey="role" label="Role" />
-                      <SortableHeader table="users" sortKey="email_verified" label="Verified" />
-                      <SortableHeader table="users" sortKey="created_at" label="Created" />
+                      <SortableHeader table="users" sortKey="last_sign_in_at" label="Last Sign In" />
                       {data.isAdmin && <th className="px-4 py-2 rounded-tr-lg">Actions</th>}
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
                     {getSortedData(data.users, 'users').map((u: any) => (
                       <tr key={u.id} className="hover:bg-gray-50">
-                        <td className="px-4 py-2 font-mono text-xs text-gray-500 truncate max-w-[120px]">{u.id}</td>
+                        <td className="px-4 py-2 font-mono text-xs text-gray-500 truncate max-w-[80px]">{u.id}</td>
                         <td className="px-4 py-2">{u.email}</td>
+                        <td className="px-4 py-2">{u.first_name || u.last_name ? `${u.first_name || ''} ${u.last_name || ''}`.trim() : <span className="text-gray-400 italic">None</span>}</td>
                         <td className="px-4 py-2 font-medium capitalize">{u.role}</td>
-                        <td className="px-4 py-2">
-                          <span className={`px-2 py-0.5 rounded text-xs ${u.email_verified ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
-                            {u.email_verified ? 'Yes' : 'No'}
-                          </span>
-                        </td>
-                        <td className="px-4 py-2 text-gray-500">{new Date(u.created_at).toLocaleString()}</td>
+                        <td className="px-4 py-2 text-gray-500">{u.last_sign_in_at ? new Date(u.last_sign_in_at).toLocaleString() : 'Never'}</td>
                         {data.isAdmin && (
                           <td className="px-4 py-2 flex items-center gap-2">
                             <button onClick={() => openModal('edit', 'users', u)} className="text-gray-400 hover:text-blue-600" title="Edit"><Edit2 className="w-4 h-4" /></button>
@@ -324,6 +320,112 @@ export default function DatabaseTab() {
               )}
             </div>
           </div>
+
+          {/* PASSWORD RESET TOKENS TABLE */}
+          <div>
+            <div className="flex justify-between items-center mb-3 border-b pb-2">
+              <h3 className="text-lg font-semibold flex items-center gap-2">
+                Password Reset Tokens Table 
+                <span className="text-sm font-normal text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">{data.passwordResetTokens?.length || 0}</span>
+              </h3>
+              {data.isAdmin && (
+                <button onClick={() => openModal('add', 'passwordResetTokens', { user_id: '', token_hash: '', expires_at: new Date(Date.now() + 3600000).toISOString() })} className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800">
+                  <Plus className="w-4 h-4" /> Add Reset Token
+                </button>
+              )}
+            </div>
+            <div className="overflow-x-auto">
+              {data.passwordResetTokens?.length > 0 ? (
+                <table className="w-full text-sm text-left">
+                  <thead className="bg-gray-50 text-gray-600">
+                    <tr className="group">
+                      <SortableHeader table="passwordResetTokens" sortKey="id" label="ID" className="rounded-tl-lg" />
+                      <SortableHeader table="passwordResetTokens" sortKey="user_id" label="User ID" />
+                      <SortableHeader table="passwordResetTokens" sortKey="expires_at" label="Expires At" />
+                      <SortableHeader table="passwordResetTokens" sortKey="used_at" label="Used At" />
+                      <SortableHeader table="passwordResetTokens" sortKey="created_at" label="Created" />
+                      {data.isAdmin && <th className="px-4 py-2 rounded-tr-lg">Actions</th>}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {getSortedData(data.passwordResetTokens, 'passwordResetTokens').map((t: any) => (
+                      <tr key={t.id} className="hover:bg-gray-50">
+                        <td className="px-4 py-2 font-mono text-xs text-gray-500 truncate max-w-[80px]">{t.id}</td>
+                        <td className="px-4 py-2 font-mono text-xs text-gray-500 truncate max-w-[80px]">{t.user_id}</td>
+                        <td className="px-4 py-2 text-gray-500">{new Date(t.expires_at).toLocaleString()}</td>
+                        <td className="px-4 py-2 text-gray-500">{t.used_at ? new Date(t.used_at).toLocaleString() : 'Not Used'}</td>
+                        <td className="px-4 py-2 text-gray-500">{new Date(t.created_at).toLocaleString()}</td>
+                        {data.isAdmin && (
+                          <td className="px-4 py-2 flex items-center gap-2">
+                            <button onClick={() => openModal('edit', 'passwordResetTokens', t)} className="text-gray-400 hover:text-blue-600" title="Edit"><Edit2 className="w-4 h-4" /></button>
+                            <button onClick={() => handleDelete('passwordResetTokens', t.id)} className="text-gray-400 hover:text-red-600" title="Delete"><Trash2 className="w-4 h-4" /></button>
+                          </td>
+                        )}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              ) : (
+                <p className="text-sm text-gray-500 italic">No password reset tokens found.</p>
+              )}
+            </div>
+          </div>
+
+          {/* EMAIL MESSAGES TABLE */}
+          <div>
+            <div className="flex justify-between items-center mb-3 border-b pb-2">
+              <h3 className="text-lg font-semibold flex items-center gap-2">
+                Email Messages Table 
+                <span className="text-sm font-normal text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">{data.emailMessages?.length || 0}</span>
+              </h3>
+              {data.isAdmin && (
+                <button onClick={() => openModal('add', 'emailMessages', { user_id: '', to_email: '', template: 'custom', status: 'pending' })} className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800">
+                  <Plus className="w-4 h-4" /> Add Email Log
+                </button>
+              )}
+            </div>
+            <div className="overflow-x-auto">
+              {data.emailMessages?.length > 0 ? (
+                <table className="w-full text-sm text-left">
+                  <thead className="bg-gray-50 text-gray-600">
+                    <tr className="group">
+                      <SortableHeader table="emailMessages" sortKey="id" label="ID" className="rounded-tl-lg" />
+                      <SortableHeader table="emailMessages" sortKey="user_id" label="User ID" />
+                      <SortableHeader table="emailMessages" sortKey="to_email" label="To" />
+                      <SortableHeader table="emailMessages" sortKey="template" label="Template" />
+                      <SortableHeader table="emailMessages" sortKey="status" label="Status" />
+                      <SortableHeader table="emailMessages" sortKey="created_at" label="Created" />
+                      {data.isAdmin && <th className="px-4 py-2 rounded-tr-lg">Actions</th>}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {getSortedData(data.emailMessages, 'emailMessages').map((m: any) => (
+                      <tr key={m.id} className="hover:bg-gray-50">
+                        <td className="px-4 py-2 font-mono text-xs text-gray-500 truncate max-w-[80px]">{m.id}</td>
+                        <td className="px-4 py-2 font-mono text-xs text-gray-500 truncate max-w-[80px]">{m.user_id}</td>
+                        <td className="px-4 py-2">{m.to_email}</td>
+                        <td className="px-4 py-2 capitalize">{m.template}</td>
+                        <td className="px-4 py-2">
+                           <span className={`px-2 py-0.5 rounded text-xs ${m.status === 'sent' ? 'bg-green-100 text-green-700' : m.status === 'failed' ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700'}`}>
+                            {m.status}
+                          </span>
+                        </td>
+                        <td className="px-4 py-2 text-gray-500">{new Date(m.created_at).toLocaleString()}</td>
+                        {data.isAdmin && (
+                          <td className="px-4 py-2 flex items-center gap-2">
+                            <button onClick={() => openModal('edit', 'emailMessages', m)} className="text-gray-400 hover:text-blue-600" title="Edit"><Edit2 className="w-4 h-4" /></button>
+                            <button onClick={() => handleDelete('emailMessages', m.id)} className="text-gray-400 hover:text-red-600" title="Delete"><Trash2 className="w-4 h-4" /></button>
+                          </td>
+                        )}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              ) : (
+                <p className="text-sm text-gray-500 italic">No email messages found.</p>
+              )}
+            </div>
+          </div>
         </div>
       )}
 
@@ -332,17 +434,32 @@ export default function DatabaseTab() {
           {getSortedData(data.users, 'users')?.map((user: any) => {
             const userSessions = data.sessions?.filter((s: any) => s.user_id === user.id) || [];
             const userApiKeys = data.apiKeys?.filter((k: any) => k.user_id === user.id) || [];
+            const userResetTokens = data.passwordResetTokens?.filter((t: any) => t.user_id === user.id) || [];
+            const userEmailMessages = data.emailMessages?.filter((m: any) => m.user_id === user.id) || [];
+            
             return (
               <div key={user.id} className="border border-gray-200 rounded-xl p-5 bg-gray-50/50">
                 <div className="flex justify-between items-start mb-4">
-                  <div>
-                    <h4 className="font-bold text-gray-800 text-lg flex items-center gap-2">
-                      {user.email} 
-                      <span className={`px-2 py-0.5 rounded text-xs font-medium capitalize ${user.role === 'admin' ? 'bg-purple-100 text-purple-700' : 'bg-gray-200 text-gray-700'}`}>
-                        {user.role}
-                      </span>
-                    </h4>
-                    <div className="text-xs text-gray-500 font-mono mt-1">ID: {user.id}</div>
+                  <div className="flex items-center gap-3">
+                    {user.avatar_url ? (
+                      <img src={user.avatar_url} alt="Avatar" className="w-10 h-10 rounded-full bg-gray-200 object-cover" />
+                    ) : (
+                      <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-lg">
+                        {user.first_name ? user.first_name[0].toUpperCase() : user.email[0].toUpperCase()}
+                      </div>
+                    )}
+                    <div>
+                      <h4 className="font-bold text-gray-800 text-lg flex items-center gap-2">
+                        {user.first_name || user.last_name ? `${user.first_name || ''} ${user.last_name || ''}`.trim() : user.email}
+                        <span className={`px-2 py-0.5 rounded text-xs font-medium capitalize ${user.role === 'admin' ? 'bg-purple-100 text-purple-700' : 'bg-gray-200 text-gray-700'}`}>
+                          {user.role}
+                        </span>
+                      </h4>
+                      <div className="text-xs text-gray-500 font-mono mt-0.5">
+                        {user.first_name || user.last_name ? <span className="mr-2 text-gray-600 font-sans">{user.email}</span> : null}
+                        ID: {user.id}
+                      </div>
+                    </div>
                   </div>
                   <div className="text-xs text-gray-400">
                     Created: {new Date(user.created_at).toLocaleDateString()}
@@ -382,6 +499,43 @@ export default function DatabaseTab() {
                         ))}
                       </ul>
                     ) : <p className="text-sm text-gray-400 italic">No API keys</p>}
+                  </div>
+                  
+                  <div className="bg-white p-4 rounded-lg border border-gray-100 shadow-sm">
+                    <h5 className="font-semibold text-sm mb-3 flex justify-between">
+                      Reset Tokens
+                      <span className="text-gray-500 font-normal bg-gray-100 px-2 py-0.5 rounded-full text-xs">{userResetTokens.length}</span>
+                    </h5>
+                    {userResetTokens.length > 0 ? (
+                      <ul className="text-sm space-y-2">
+                        {userResetTokens.map((t: any) => (
+                          <li key={t.id} className="border-b border-gray-50 last:border-0 pb-2 text-gray-600">
+                            <span className="block text-xs font-mono text-gray-400 mb-0.5">ID: {t.id}</span>
+                            Expires: {new Date(t.expires_at).toLocaleString()}
+                          </li>
+                        ))}
+                      </ul>
+                    ) : <p className="text-sm text-gray-400 italic">No reset tokens</p>}
+                  </div>
+
+                  <div className="bg-white p-4 rounded-lg border border-gray-100 shadow-sm">
+                    <h5 className="font-semibold text-sm mb-3 flex justify-between">
+                      Emails
+                      <span className="text-gray-500 font-normal bg-gray-100 px-2 py-0.5 rounded-full text-xs">{userEmailMessages.length}</span>
+                    </h5>
+                    {userEmailMessages.length > 0 ? (
+                      <ul className="text-sm space-y-2">
+                        {userEmailMessages.map((m: any) => (
+                          <li key={m.id} className="border-b border-gray-50 last:border-0 pb-2 text-gray-600">
+                            <div className="font-medium text-gray-800">{m.template}</div>
+                            <div className="flex justify-between mt-0.5">
+                              <span className="text-xs text-gray-500">{m.to_email}</span>
+                              <span className={`text-xs ${m.status === 'sent' ? 'text-green-600' : m.status === 'failed' ? 'text-red-600' : 'text-yellow-600'}`}>{m.status}</span>
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : <p className="text-sm text-gray-400 italic">No email messages</p>}
                   </div>
                 </div>
               </div>
