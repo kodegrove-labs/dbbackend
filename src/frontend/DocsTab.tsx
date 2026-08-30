@@ -104,7 +104,20 @@ const fetchAPI = async (endpoint, options = {}) => {
               <pre className="bg-gray-50 border border-gray-200 text-gray-800 p-4 rounded-lg overflow-x-auto">
 {`const res = await fetchAPI('/api/auth/me');
 const data = await res.json();
-console.log(data.user); // { id: "...", email: "user@example.com", role: "admin" }`}
+console.log(data.user); 
+/* 
+{ 
+  id: "...", 
+  email: "user@example.com",
+  first_name: "Jane",
+  last_name: "Doe",
+  avatar_url: "https://...",
+  role: "user",
+  last_sign_in_at: "2024-05-10T12:00:00.000Z",
+  stripe_customer_id: null,
+  metadata: null
+}
+*/`}
               </pre>
             </div>
             
@@ -140,7 +153,20 @@ console.log(data.user); // { id: "...", email: "user@example.com", role: "admin"
               <pre className="bg-gray-50 border border-gray-200 text-gray-800 p-4 rounded-lg overflow-x-auto">
 {`const res = await fetchAPI('/api/admin/db-dump');
 const data = await res.json();
-console.log(data); // { success: true, isAdmin: true/false, users: [...], sessions: [...] }`}
+
+// If you are a normal user (role: 'user'), you only get your own data:
+console.log(data); 
+/* 
+{ 
+  success: true, 
+  isAdmin: false, 
+  users: [{ id: "your_id", email: "user@example.com", first_name: "Jane", ... }], 
+  sessions: [{ ... }],
+  apiKeys: [{ ... }],
+  passwordResetTokens: [...],
+  emailMessages: [...]
+} 
+*/`}
               </pre>
             </div>
 

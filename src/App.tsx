@@ -4,9 +4,10 @@ import EmailTab from './frontend/EmailTab';
 import DatabaseTab from './frontend/DatabaseTab';
 import DocsTab from './frontend/DocsTab';
 import ApiKeysTab from './frontend/ApiKeysTab';
+import ProfileTab from './frontend/ProfileTab';
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<'auth' | 'email' | 'db' | 'docs' | 'keys'>('docs');
+  const [activeTab, setActiveTab] = useState<'auth' | 'email' | 'db' | 'docs' | 'keys' | 'profile'>('profile');
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col p-6 font-sans text-gray-800">
@@ -16,6 +17,12 @@ export default function App() {
       </div>
 
       <div className="max-w-4xl w-full mx-auto mb-8 flex flex-wrap gap-2 justify-center">
+        <button 
+          onClick={() => setActiveTab('profile')}
+          className={`px-4 py-2 rounded-full text-sm font-medium transition ${activeTab === 'profile' ? 'bg-blue-600 text-white shadow-md' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'}`}
+        >
+          My Profile
+        </button>
         <button 
           onClick={() => setActiveTab('docs')}
           className={`px-4 py-2 rounded-full text-sm font-medium transition ${activeTab === 'docs' ? 'bg-blue-600 text-white shadow-md' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'}`}
@@ -49,6 +56,7 @@ export default function App() {
       </div>
 
       <div className="flex-1 flex flex-col items-center">
+        {activeTab === 'profile' && <ProfileTab />}
         {activeTab === 'docs' && <DocsTab />}
         {activeTab === 'auth' && <AuthTab />}
         {activeTab === 'email' && <EmailTab />}
