@@ -10,6 +10,7 @@ const REFRESH_SECRET = process.env.REFRESH_SECRET || 'super-secret-refresh-key';
 
 export const loginUserFlow = async (email: string, password: string) => {
   const [user] = await db.select().from(users).where(eq(users.email, email)).limit(1);
+
   if (!user || !user.password_hash) {
     throw new Error('Invalid email or password');
   }
@@ -19,15 +20,15 @@ export const loginUserFlow = async (email: string, password: string) => {
     throw new Error('Invalid email or password');
   }
 
-  // Tokens
-  const accessToken = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, { expiresIn: '15m' });
-  const refreshToken = jwt.sign({ id: user.id, email: user.email }, REFRESH_SECRET, { expiresIn: '7d' });
-
-  // Store session
   const sessionId = crypto.randomUUID();
   const expiresAt = new Date();
   expiresAt.setDate(expiresAt.getDate() + 7);
 
+  // Tokens
+  const accessToken = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, { expiresIn: '15m' });
+  const refreshToken = jwt.sign({ id: user.id, email: user.email, sessionId }, REFRESH_SECRET, { expiresIn: '7d' });
+
+  // Store session
   await db.insert(sessions).values({
     id: sessionId,
     user_id: user.id,

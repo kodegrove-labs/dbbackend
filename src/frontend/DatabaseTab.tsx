@@ -183,7 +183,7 @@ export default function DatabaseTab() {
                 <span className="text-sm font-normal text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">{data.users?.length || 0}</span>
               </h3>
               {data.isAdmin && (
-                <button onClick={() => openModal('add', 'users', { email: '', first_name: '', last_name: '', password_hash: '', email_verified: false, role: 'user', auth_provider: 'email' })} className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800">
+                <button onClick={() => openModal('add', 'users', { email: '', username: '', password_hash: '', email_verified: false, role: 'user', auth_provider: 'email' })} className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800">
                   <Plus className="w-4 h-4" /> Add User
                 </button>
               )}
@@ -195,7 +195,7 @@ export default function DatabaseTab() {
                     <tr className="group">
                       <SortableHeader table="users" sortKey="id" label="ID" className="rounded-tl-lg" />
                       <SortableHeader table="users" sortKey="email" label="Email" />
-                      <SortableHeader table="users" sortKey="first_name" label="Name" />
+                      <SortableHeader table="users" sortKey="username" label="Name" />
                       <SortableHeader table="users" sortKey="role" label="Role" />
                       <SortableHeader table="users" sortKey="last_sign_in_at" label="Last Sign In" />
                       {data.isAdmin && <th className="px-4 py-2 rounded-tr-lg">Actions</th>}
@@ -206,7 +206,7 @@ export default function DatabaseTab() {
                       <tr key={u.id} className="hover:bg-gray-50">
                         <td className="px-4 py-2 font-mono text-xs text-gray-500 truncate max-w-[80px]">{u.id}</td>
                         <td className="px-4 py-2">{u.email}</td>
-                        <td className="px-4 py-2">{u.first_name || u.last_name ? `${u.first_name || ''} ${u.last_name || ''}`.trim() : <span className="text-gray-400 italic">None</span>}</td>
+                        <td className="px-4 py-2">{u.username ? u.username : <span className="text-gray-400 italic">None</span>}</td>
                         <td className="px-4 py-2 font-medium capitalize">{u.role}</td>
                         <td className="px-4 py-2 text-gray-500">{u.last_sign_in_at ? new Date(u.last_sign_in_at).toLocaleString() : 'Never'}</td>
                         {data.isAdmin && (
@@ -445,18 +445,18 @@ export default function DatabaseTab() {
                       <img src={user.avatar_url} alt="Avatar" className="w-10 h-10 rounded-full bg-gray-200 object-cover" />
                     ) : (
                       <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-lg">
-                        {user.first_name ? user.first_name[0].toUpperCase() : user.email[0].toUpperCase()}
+                        {user.username ? user.username[0].toUpperCase() : user.email[0].toUpperCase()}
                       </div>
                     )}
                     <div>
                       <h4 className="font-bold text-gray-800 text-lg flex items-center gap-2">
-                        {user.first_name || user.last_name ? `${user.first_name || ''} ${user.last_name || ''}`.trim() : user.email}
+                        {user.username ? user.username : user.email}
                         <span className={`px-2 py-0.5 rounded text-xs font-medium capitalize ${user.role === 'admin' ? 'bg-purple-100 text-purple-700' : 'bg-gray-200 text-gray-700'}`}>
                           {user.role}
                         </span>
                       </h4>
                       <div className="text-xs text-gray-500 font-mono mt-0.5">
-                        {user.first_name || user.last_name ? <span className="mr-2 text-gray-600 font-sans">{user.email}</span> : null}
+                        {user.username ? <span className="mr-2 text-gray-600 font-sans">{user.email}</span> : null}
                         ID: {user.id}
                       </div>
                     </div>

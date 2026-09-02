@@ -53,12 +53,12 @@ export const loginWithGoogleFlow = async (credential: string) => {
     user.email_verified = email_verified === true;
   }
 
-  const accessToken = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, { expiresIn: '15m' });
-  const refreshToken = jwt.sign({ id: user.id, email: user.email }, REFRESH_SECRET, { expiresIn: '7d' });
-
   const sessionId = crypto.randomUUID();
   const expiresAt = new Date();
   expiresAt.setDate(expiresAt.getDate() + 7);
+
+  const accessToken = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, { expiresIn: '15m' });
+  const refreshToken = jwt.sign({ id: user.id, email: user.email, sessionId }, REFRESH_SECRET, { expiresIn: '7d' });
 
   await db.insert(sessions).values({
     id: sessionId,

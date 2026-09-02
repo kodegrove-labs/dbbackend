@@ -41,6 +41,7 @@ export default function ApiKeysTab() {
   const handleGenerate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newKeyName) return;
+    setErrorMsg('');
 
     try {
       const res = await fetch('/api/keys/generate', {
@@ -49,13 +50,16 @@ export default function ApiKeysTab() {
         body: JSON.stringify({ name: newKeyName })
       });
       const data = await res.json();
-      if (data.apiKey) {
+      if (res.ok && data.apiKey) {
         setGeneratedKey(data);
         setNewKeyName('');
         fetchKeys();
+      } else {
+        setErrorMsg(data.error || 'Failed to generate API key.');
       }
     } catch (err) {
       console.error('Failed to generate key', err);
+      setErrorMsg('Network error occurred.');
     }
   };
 

@@ -31,8 +31,7 @@ export default function ProfileTab() {
   const [success, setSuccess] = useState('');
 
   // Form state
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
+  const [username, setUsername] = useState('');
   const [avatarUrl, setAvatarUrl] = useState('');
 
   const loadProfile = async () => {
@@ -43,8 +42,7 @@ export default function ProfileTab() {
       if (res.ok) {
         const data = await res.json();
         setProfile(data.user);
-        setFirstName(data.user.first_name || '');
-        setLastName(data.user.last_name || '');
+        setUsername(data.user.username || '');
         setAvatarUrl(data.user.avatar_url || '');
       } else {
         setError('Failed to load profile. Are you logged in?');
@@ -69,8 +67,7 @@ export default function ProfileTab() {
       const res = await localFetchAPI('/api/auth/me', {
         method: 'PUT',
         body: JSON.stringify({
-          first_name: firstName,
-          last_name: lastName,
+          username: username,
           avatar_url: avatarUrl,
         }),
       });
@@ -112,12 +109,12 @@ export default function ProfileTab() {
               alt="Profile" 
               className="w-16 h-16 rounded-full object-cover bg-gray-100 border border-gray-200"
               onError={(e) => {
-                (e.target as HTMLImageElement).src = 'https://ui-avatars.com/api/?name=' + (firstName || profile.email) + '&background=random';
+                (e.target as HTMLImageElement).src = 'https://ui-avatars.com/api/?name=' + (username || profile.email) + '&background=random';
               }}
             />
           ) : (
             <div className="w-16 h-16 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-2xl">
-              {(firstName?.[0] || profile.email?.[0] || '?').toUpperCase()}
+              {(username?.[0] || profile.email?.[0] || '?').toUpperCase()}
             </div>
           )}
           <div>
@@ -130,27 +127,15 @@ export default function ProfileTab() {
         {success && <div className="mb-6 p-3 bg-green-50 text-green-700 rounded-lg text-sm border border-green-100">{success}</div>}
 
         <form onSubmit={handleSave} className="space-y-5">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">First Name</label>
-              <input
-                type="text"
-                value={firstName}
-                onChange={(e) => setFirstName(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
-                placeholder="Jane"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
-              <input
-                type="text"
-                value={lastName}
-                onChange={(e) => setLastName(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
-                placeholder="Doe"
-              />
-            </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Username</label>
+            <input
+              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+              placeholder="johndoe"
+            />
           </div>
 
           <div>

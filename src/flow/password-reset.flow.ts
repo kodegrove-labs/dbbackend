@@ -19,7 +19,7 @@ export const requestPasswordResetFlow = async (email: string) => {
   await db.insert(verificationTokens).values({
     id: crypto.randomUUID(),
     user_id: user.id,
-    token_hash: await bcrypt.hash(token, 10),
+    token_hash: crypto.createHash('sha256').update(token).digest('hex'),
     type: 'password_reset',
     expires_at: expiresAt,
   });
