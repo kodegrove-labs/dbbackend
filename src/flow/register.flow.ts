@@ -31,7 +31,7 @@ export const registerUserFlow = async (email: string, password: string) => {
   await db.insert(verificationTokens).values({
     id: crypto.randomUUID(),
     user_id: userId,
-    token_hash: await bcrypt.hash(token, 10),
+    token_hash: crypto.createHash('sha256').update(token).digest('hex'),
     type: 'email_verification',
     expires_at: expiresAt,
   });

@@ -3,8 +3,7 @@ import { pgTable, text, boolean, timestamp, varchar, jsonb } from 'drizzle-orm/p
 export const users = pgTable('users', {
   id: text('id').primaryKey(),
   email: text('email').notNull().unique(),
-  first_name: text('first_name'),
-  last_name: text('last_name'),
+  username: text('username'),
   avatar_url: text('avatar_url'),
   stripe_customer_id: text('stripe_customer_id'),
   metadata: jsonb('metadata'),
@@ -12,7 +11,7 @@ export const users = pgTable('users', {
   email_verified: boolean('email_verified').default(false).notNull(),
   auth_provider: varchar('auth_provider', { enum: ['email', 'google'] }).default('email').notNull(),
   provider_id: text('provider_id'),
-  role: varchar('role', { enum: ['user', 'admin'] }).default('user').notNull(),
+  role: varchar('role', { enum: ['user', 'admin', 'editor'] }).default('user').notNull(),
   last_sign_in_at: timestamp('last_sign_in_at'),
   created_at: timestamp('created_at').defaultNow().notNull(),
   updated_at: timestamp('updated_at').defaultNow().notNull(),
@@ -62,4 +61,16 @@ export const apiKeys = pgTable('api_keys', {
   key_prefix: text('key_prefix').notNull(),
   created_at: timestamp('created_at').defaultNow().notNull(),
   last_used_at: timestamp('last_used_at'),
+});
+
+export const aiLogs = pgTable('ai_logs', {
+  id: text('id').primaryKey(),
+  user_id: text('user_id').references(() => users.id, { onDelete: 'set null' }),
+  api_key_id: text('api_key_id').references(() => apiKeys.id, { onDelete: 'set null' }),
+  model: text('model').notNull(),
+  prompt: text('prompt').notNull(),
+  response: text('response'),
+  tokens_used: text('tokens_used'),
+  error: text('error'),
+  created_at: timestamp('created_at').defaultNow().notNull(),
 });

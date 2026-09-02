@@ -1,13 +1,13 @@
 import { Router, Request, Response } from 'express';
 import { generateApiKey, listApiKeys } from './api-keys.service';
-import { requireAuth, AuthRequest } from '../middleware/auth';
+import { requireAuth, requireRoles, AuthRequest } from '../middleware/auth';
 
 const router = Router();
 
 // Protect all API key endpoints so only authenticated users can access them
 router.use(requireAuth);
 
-router.post('/generate', async (req: AuthRequest, res: Response) => {
+router.post('/generate', requireRoles(['admin', 'editor']), async (req: AuthRequest, res: Response) => {
   try {
     const { name } = req.body;
     const userId = req.user!.id;

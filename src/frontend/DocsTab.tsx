@@ -83,14 +83,20 @@ const fetchAPI = async (endpoint, options = {}) => {
                 <span className="bg-green-100 text-green-700 px-2 py-1 rounded text-xs font-bold">POST</span>
                 <code className="text-gray-800 font-semibold">/api/auth/google</code>
               </div>
-              <p className="text-gray-600 mb-2">Authenticates a user via Google OAuth ID token (credential).</p>
+              <p className="text-gray-600 mb-2">Authenticates a user via Google OAuth ID token (credential). <strong className="text-red-600">Note: </strong> If using this from a separate frontend project, DO NOT use <code>data-login_uri</code> as it will redirect the browser to this backend. Instead, use a JavaScript <code>callback</code> in Google Identity Services and fetch this endpoint manually via AJAX.</p>
               <pre className="bg-gray-50 border border-gray-200 text-gray-800 p-4 rounded-lg overflow-x-auto">
-{`await fetchAPI('/api/auth/google', {
-  method: 'POST',
-  body: JSON.stringify({ 
-    credential: 'google.id.token.from.frontend.client'
-  })
-});`}
+{`// 1. In your external frontend, use a JS callback instead of login_uri:
+// <div id="g_id_onload" data-callback="handleGoogleLogin" ...>
+
+// 2. Fetch the API with the credential token:
+async function handleGoogleLogin(response) {
+  await fetchAPI('/api/auth/google', {
+    method: 'POST',
+    body: JSON.stringify({ 
+      credential: response.credential
+    })
+  });
+}`}
               </pre>
             </div>
 
@@ -109,8 +115,7 @@ console.log(data.user);
 { 
   id: "...", 
   email: "user@example.com",
-  first_name: "Jane",
-  last_name: "Doe",
+  username: "johndoe",
   avatar_url: "https://...",
   role: "user",
   last_sign_in_at: "2024-05-10T12:00:00.000Z",
@@ -160,7 +165,7 @@ console.log(data);
 { 
   success: true, 
   isAdmin: false, 
-  users: [{ id: "your_id", email: "user@example.com", first_name: "Jane", ... }], 
+  users: [{ id: "your_id", email: "user@example.com", username: "johndoe", ... }], 
   sessions: [{ ... }],
   apiKeys: [{ ... }],
   passwordResetTokens: [...],
@@ -265,6 +270,44 @@ await fetchAPI('/api/email/template', {
             </div>
           </div>
         </section>
+
+        {/* AI Endpoints */}
+        <section>
+          <h3 className="text-lg font-semibold text-gray-800 border-b pb-2 mb-4">5. AI Model Calling</h3>
+          <p className="text-gray-600 mb-4">
+            These endpoints allow you to call Gemini AI models. You can authenticate using either a session cookie (if logged in via the UI) OR an API Key (perfect for external projects).
+          </p>
+          
+          <div className="space-y-6">
+            <div>
+              <div className="flex items-center gap-3 mb-2">
+                <span className="bg-green-100 text-green-700 px-2 py-1 rounded text-xs font-bold">POST</span>
+                <code className="text-gray-800 font-semibold">/api/ai/generate</code>
+              </div>
+              <p className="text-gray-600 mb-2">Generate content using a Gemini model. If calling from an external project, send your API Key in the Authorization header.</p>
+              <pre className="bg-gray-50 border border-gray-200 text-gray-800 p-4 rounded-lg overflow-x-auto">
+{`// Calling from an external project using an API Key
+const response = await fetch('https://YOUR_BACKEND_URL/api/ai/generate', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'Authorization': 'Bearer sk_live_YOUR_API_KEY_HERE'
+  },
+  body: JSON.stringify({ 
+    prompt: 'Write a short poem about coding',
+    model: 'gemini-3.8-flash' // Optional, defaults to this model
+  })
+});
+
+const data = await response.json();
+console.log(data.text); 
+// "In glowing screens where logic weaves,\\nA tapestry of code..."
+`}
+              </pre>
+            </div>
+          </div>
+        </section>
+
       </div>
     </div>
   );
