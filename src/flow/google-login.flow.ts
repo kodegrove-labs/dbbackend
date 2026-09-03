@@ -35,6 +35,7 @@ export const loginWithGoogleFlow = async (credential: string) => {
     await db.insert(users).values({
       id: userId,
       email,
+      username: payload.name || email.split('@')[0],
       email_verified: email_verified === true,
       auth_provider: 'google',
       provider_id,
