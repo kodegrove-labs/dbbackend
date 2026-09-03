@@ -5,7 +5,7 @@ import { db } from '../db';
 import { users, verificationTokens } from '../db/schema';
 import { sendVerificationEmail, sendWelcomeEmail } from '../email/email.service';
 
-export const registerUserFlow = async (email: string, password: string) => {
+export const registerUserFlow = async (email: string, password: string, username?: string) => {
   const existingUser = await db.select().from(users).where(eq(users.email, email)).limit(1);
   if (existingUser.length > 0) {
     throw new Error('Email already registered');
@@ -19,6 +19,7 @@ export const registerUserFlow = async (email: string, password: string) => {
   await db.insert(users).values({
     id: userId,
     email,
+    username: username || email.split('@')[0],
     password_hash,
     role,
   });
@@ -39,7 +40,7 @@ export const registerUserFlow = async (email: string, password: string) => {
   // Send emails sequentially to avoid SMTP concurrent connection drops
   (async () => {
     try {
-      await sendWelcomeEmail(email, email.split('@')[0]);
+      await sendWelcomeEmail(email, username || email.split('@')[0]);
       await sendVerificationEmail(email, token);
     } catch (e) {
       console.error('Failed to send registration emails:', e);

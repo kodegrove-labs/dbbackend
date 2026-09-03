@@ -11,6 +11,12 @@ const router = Router();
 const registerSchema = z.object({
   email: z.string().email(),
   password: z.string().min(8),
+  username: z.string().optional(),
+});
+
+const loginSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(8),
 });
 
 router.post('/verify', async (req: Request, res: Response) => {
@@ -51,8 +57,8 @@ router.post('/google', async (req: Request, res: Response) => {
 
 router.post('/register', async (req: Request, res: Response) => {
   try {
-    const { email, password } = registerSchema.parse(req.body);
-    const user = await registerUserFlow(email, password);
+    const { email, password, username } = registerSchema.parse(req.body);
+    const user = await registerUserFlow(email, password, username);
     res.status(201).json({ message: 'User registered. Please check email to verify.', user });
   } catch (error: any) {
     res.status(400).json({ error: error.message });
@@ -61,7 +67,7 @@ router.post('/register', async (req: Request, res: Response) => {
 
 router.post('/login', async (req: Request, res: Response) => {
   try {
-    const { email, password } = registerSchema.parse(req.body);
+    const { email, password } = loginSchema.parse(req.body);
     const result = await loginUserFlow(email, password);
     
     // Set HttpOnly cookie for token

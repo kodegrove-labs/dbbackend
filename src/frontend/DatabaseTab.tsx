@@ -426,6 +426,56 @@ export default function DatabaseTab() {
               )}
             </div>
           </div>
+
+          {/* AI LOGS TABLE */}
+          <div>
+            <div className="flex justify-between items-center mb-3 border-b pb-2">
+              <h3 className="text-lg font-semibold flex items-center gap-2">
+                AI Logs Table 
+                <span className="text-sm font-normal text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">{data.aiLogs?.length || 0}</span>
+              </h3>
+              {data.isAdmin && (
+                <button onClick={() => openModal('add', 'aiLogs', { user_id: '', model: 'gemini-3.8-flash', prompt: '', response: '' })} className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800">
+                  <Plus className="w-4 h-4" /> Add AI Log
+                </button>
+              )}
+            </div>
+            <div className="overflow-x-auto">
+              {data.aiLogs?.length > 0 ? (
+                <table className="w-full text-sm text-left">
+                  <thead className="bg-gray-50 text-gray-600">
+                    <tr className="group">
+                      <SortableHeader table="aiLogs" sortKey="id" label="ID" className="rounded-tl-lg" />
+                      <SortableHeader table="aiLogs" sortKey="user_id" label="User ID" />
+                      <SortableHeader table="aiLogs" sortKey="model" label="Model" />
+                      <SortableHeader table="aiLogs" sortKey="tokens_used" label="Tokens" />
+                      <SortableHeader table="aiLogs" sortKey="created_at" label="Created" />
+                      {data.isAdmin && <th className="px-4 py-2 rounded-tr-lg">Actions</th>}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {getSortedData(data.aiLogs, 'aiLogs').map((log: any) => (
+                      <tr key={log.id} className="hover:bg-gray-50">
+                        <td className="px-4 py-2 font-mono text-xs text-gray-500 truncate max-w-[80px]">{log.id}</td>
+                        <td className="px-4 py-2 font-mono text-xs text-gray-500 truncate max-w-[80px]">{log.user_id}</td>
+                        <td className="px-4 py-2">{log.model}</td>
+                        <td className="px-4 py-2">{log.tokens_used || '0'}</td>
+                        <td className="px-4 py-2 text-gray-500">{new Date(log.created_at).toLocaleString()}</td>
+                        {data.isAdmin && (
+                          <td className="px-4 py-2 flex items-center gap-2">
+                            <button onClick={() => openModal('edit', 'aiLogs', log)} className="text-gray-400 hover:text-blue-600" title="Edit"><Edit2 className="w-4 h-4" /></button>
+                            <button onClick={() => handleDelete('aiLogs', log.id)} className="text-gray-400 hover:text-red-600" title="Delete"><Trash2 className="w-4 h-4" /></button>
+                          </td>
+                        )}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              ) : (
+                <p className="text-sm text-gray-500 italic">No AI logs found.</p>
+              )}
+            </div>
+          </div>
         </div>
       )}
 
@@ -436,6 +486,7 @@ export default function DatabaseTab() {
             const userApiKeys = data.apiKeys?.filter((k: any) => k.user_id === user.id) || [];
             const userResetTokens = data.passwordResetTokens?.filter((t: any) => t.user_id === user.id) || [];
             const userEmailMessages = data.emailMessages?.filter((m: any) => m.user_id === user.id) || [];
+            const userAiLogs = data.aiLogs?.filter((l: any) => l.user_id === user.id) || [];
             
             return (
               <div key={user.id} className="border border-gray-200 rounded-xl p-5 bg-gray-50/50">
@@ -536,6 +587,26 @@ export default function DatabaseTab() {
                         ))}
                       </ul>
                     ) : <p className="text-sm text-gray-400 italic">No email messages</p>}
+                  </div>
+
+                  <div className="bg-white p-4 rounded-lg border border-gray-100 shadow-sm">
+                    <h5 className="font-semibold text-sm mb-3 flex justify-between">
+                      AI Logs
+                      <span className="text-gray-500 font-normal bg-gray-100 px-2 py-0.5 rounded-full text-xs">{userAiLogs.length}</span>
+                    </h5>
+                    {userAiLogs.length > 0 ? (
+                      <ul className="text-sm space-y-2">
+                        {userAiLogs.map((log: any) => (
+                          <li key={log.id} className="border-b border-gray-50 last:border-0 pb-2 text-gray-600">
+                            <div className="font-medium text-gray-800 truncate">{log.model}</div>
+                            <div className="flex justify-between mt-0.5">
+                              <span className="text-xs text-gray-500 truncate max-w-[150px]">{log.prompt}</span>
+                              <span className="text-xs text-blue-600">{log.tokens_used || 0} tokens</span>
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : <p className="text-sm text-gray-400 italic">No AI logs</p>}
                   </div>
                 </div>
               </div>
