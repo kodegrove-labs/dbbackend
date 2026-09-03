@@ -70,12 +70,12 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col p-6 font-sans text-gray-800">
-      <div className="max-w-4xl w-full mx-auto mb-8 text-center">
+      <div className="max-w-7xl w-full mx-auto mb-8 text-center">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">Centralized API Dashboard</h1>
         <p className="text-gray-500 text-sm">Testing interface for Auth, Email, and Database services</p>
       </div>
 
-      <div className="max-w-4xl w-full mx-auto mb-8 flex flex-wrap gap-2 justify-center">
+      <div className="max-w-7xl w-full mx-auto mb-8 flex flex-wrap gap-2 justify-center">
         <button 
           onClick={() => setActiveTab('profile')}
           className={`px-4 py-2 rounded-full text-sm font-medium transition ${activeTab === 'profile' ? 'bg-blue-600 text-white shadow-md' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'}`}

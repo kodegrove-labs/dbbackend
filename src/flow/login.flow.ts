@@ -35,5 +35,6 @@ export const loginUserFlow = async (email: string, password: string) => {
     expires_at: expiresAt,
   });
 
+  await db.update(users).set({ last_sign_in_at: new Date(), updated_at: new Date() }).where(eq(users.id, user.id));
   return { accessToken, refreshToken, user: { id: user.id, email: user.email, email_verified: user.email_verified } };
 };
