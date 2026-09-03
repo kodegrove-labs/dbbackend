@@ -1,4 +1,6 @@
-import React, { useState, useEffect } from 'react';
+const fs = require('fs');
+
+const finalCode = `import React, { useState, useEffect } from 'react';
 import { User, Shield, Calendar, Fingerprint, Mail, RefreshCw, CheckCircle, XCircle } from 'lucide-react';
 
 const localFetchAPI = async (url: string, options?: RequestInit) => {
@@ -8,7 +10,7 @@ const localFetchAPI = async (url: string, options?: RequestInit) => {
   };
   
   if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
+    headers['Authorization'] = \`Bearer \${token}\`;
   }
 
   const response = await fetch(url, {
@@ -91,10 +93,10 @@ export default function ProfileTab() {
               <span>{profile.email}</span>
             </div>
             <div className="mt-3 flex items-center justify-center md:justify-start gap-2">
-              <span className={`px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider ${profile.role === 'admin' ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-700'}`}>
+              <span className={\`px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider \${profile.role === 'admin' ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-700'}\`}>
                 {profile.role}
               </span>
-              <span className={`px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1 ${profile.email_verified ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
+              <span className={\`px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1 \${profile.email_verified ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}\`}>
                 {profile.email_verified ? <CheckCircle className="w-3 h-3" /> : <XCircle className="w-3 h-3" />}
                 {profile.email_verified ? 'Verified' : 'Unverified'}
               </span>
@@ -168,7 +170,7 @@ export default function ProfileTab() {
             <span className="text-gray-500 font-normal bg-gray-100 px-2 py-0.5 rounded-full text-xs">{(data.sessions || []).length}</span>
           </h5>
           {(data.sessions || []).length > 0 ? (
-            <ul className="text-sm space-y-2 max-h-48 overflow-y-auto pr-2">
+            <ul className="text-sm space-y-2">
               {data.sessions.map((s: any) => (
                 <li key={s.id} className="border-b border-gray-50 last:border-0 pb-2 flex justify-between text-gray-600">
                   <span className="truncate max-w-[150px] font-mono text-xs">{s.id}</span>
@@ -185,7 +187,7 @@ export default function ProfileTab() {
             <span className="text-gray-500 font-normal bg-gray-100 px-2 py-0.5 rounded-full text-xs">{(data.apiKeys || []).length}</span>
           </h5>
           {(data.apiKeys || []).length > 0 ? (
-            <ul className="text-sm space-y-2 max-h-48 overflow-y-auto pr-2">
+            <ul className="text-sm space-y-2">
               {data.apiKeys.map((k: any) => (
                 <li key={k.id} className="border-b border-gray-50 last:border-0 pb-2 text-gray-600">
                   <div className="font-medium text-gray-800">{k.name}</div>
@@ -211,7 +213,7 @@ export default function ProfileTab() {
                   <div className="font-medium text-gray-800">{m.template}</div>
                   <div className="flex justify-between mt-0.5">
                     <span className="text-xs text-gray-500 truncate max-w-[150px]">{m.to_email}</span>
-                    <span className={`text-xs ${m.status === 'sent' ? 'text-green-600' : m.status === 'failed' ? 'text-red-600' : 'text-yellow-600'}`}>
+                    <span className={\`text-xs \${m.status === 'sent' ? 'text-green-600' : m.status === 'failed' ? 'text-red-600' : 'text-yellow-600'}\`}>
                       {m.status} {m.provider_message_id?.startsWith('http') && <a href={m.provider_message_id} target="_blank" rel="noreferrer" className="text-blue-500 hover:underline ml-1">(Preview)</a>}
                     </span>
                   </div>
@@ -244,3 +246,6 @@ export default function ProfileTab() {
     </div>
   );
 }
+\`;
+
+fs.writeFileSync('src/frontend/ProfileTab.tsx', finalCode);

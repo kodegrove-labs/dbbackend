@@ -44,7 +44,7 @@ export const loginWithGoogleFlow = async (credential: string) => {
     [user] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
     
     // Send welcome email to new Google users
-    sendWelcomeEmail(email, payload.name || email.split('@')[0]).catch(console.error);
+    await sendWelcomeEmail(email, payload.name || email.split('@')[0]).catch(console.error);
   } else if (user.auth_provider === 'email') {
     await db.update(users)
       .set({ auth_provider: 'google', provider_id, email_verified: email_verified === true })
@@ -67,5 +67,6 @@ export const loginWithGoogleFlow = async (credential: string) => {
     expires_at: expiresAt,
   });
 
+  await db.update(users).set({ last_sign_in_at: new Date(), updated_at: new Date() }).where(eq(users.id, user.id));
   return { accessToken, refreshToken, user: { id: user.id, email: user.email, email_verified: user.email_verified } };
 };

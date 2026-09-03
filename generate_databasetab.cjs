@@ -1,4 +1,6 @@
-import React, { useState, useEffect } from 'react';
+const fs = require('fs');
+
+const finalCode = `import React, { useState, useEffect } from 'react';
 import { FlatView } from './database/FlatView';
 import { RelationalView } from './database/RelationalView';
 import { RecordModal } from './database/RecordModal';
@@ -77,8 +79,8 @@ export default function DatabaseTab() {
       setModalError('');
       const payload = JSON.parse(jsonStr);
       const url = modal?.type === 'add' 
-        ? `/api/admin/records/${modal.table}` 
-        : `/api/admin/records/${modal.table}/${payload.id}`;
+        ? \`/api/admin/records/\${modal.table}\` 
+        : \`/api/admin/records/\${modal.table}/\${payload.id}\`;
       const method = modal?.type === 'add' ? 'POST' : 'PUT';
       
       const res = await fetch(url, {
@@ -101,7 +103,7 @@ export default function DatabaseTab() {
   const handleDelete = async (table: string, id: string) => {
     if (!confirm('Are you sure you want to delete this record?')) return;
     try {
-      const res = await fetch(`/api/admin/records/${table}/${id}`, {
+      const res = await fetch(\`/api/admin/records/\${table}/\${id}\`, {
         method: 'DELETE'
       });
       const json = await res.json();
@@ -123,13 +125,13 @@ export default function DatabaseTab() {
           <div className="flex bg-gray-100 p-1 rounded-lg">
             <button
               onClick={() => setViewMode('flat')}
-              className={`px-3 py-1.5 text-sm font-medium rounded-md transition ${viewMode === 'flat' ? 'bg-white shadow-sm text-gray-800' : 'text-gray-500 hover:text-gray-700'}`}
+              className={\`px-3 py-1.5 text-sm font-medium rounded-md transition \${viewMode === 'flat' ? 'bg-white shadow-sm text-gray-800' : 'text-gray-500 hover:text-gray-700'}\`}
             >
               Flat
             </button>
             <button
               onClick={() => setViewMode('relational')}
-              className={`px-3 py-1.5 text-sm font-medium rounded-md transition ${viewMode === 'relational' ? 'bg-white shadow-sm text-gray-800' : 'text-gray-500 hover:text-gray-700'}`}
+              className={\`px-3 py-1.5 text-sm font-medium rounded-md transition \${viewMode === 'relational' ? 'bg-white shadow-sm text-gray-800' : 'text-gray-500 hover:text-gray-700'}\`}
             >
               Relational
             </button>
@@ -180,3 +182,6 @@ export default function DatabaseTab() {
     </div>
   );
 }
+`;
+
+fs.writeFileSync('src/frontend/DatabaseTab.tsx', finalCode);

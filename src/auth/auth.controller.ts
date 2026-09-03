@@ -3,8 +3,8 @@ import { registerUserFlow, loginUserFlow, requestPasswordResetFlow, loginWithGoo
 import { requireAuth, AuthRequest } from '../middleware/auth';
 import { z } from 'zod';
 import { db } from '../db';
-import { users } from '../db/schema';
-import { eq } from 'drizzle-orm';
+import { users, sessions, apiKeys, emailMessages, aiLogs } from '../db/schema';
+import { eq, desc } from 'drizzle-orm';
 
 const router = Router();
 
@@ -94,8 +94,8 @@ router.post('/login', async (req: Request, res: Response) => {
 router.post('/logout', async (req: Request, res: Response) => {
   // If user has refresh_token cookie, we could delete it from sessions db.
   // For simplicity, we just clear the cookie.
-  res.clearCookie('token', { sameSite: 'none', secure: true });
-  res.clearCookie('refresh_token', { sameSite: 'none', secure: true });
+  res.clearCookie('token', { httpOnly: true, sameSite: 'none', secure: true });
+  res.clearCookie('refresh_token', { httpOnly: true, sameSite: 'none', secure: true });
   res.json({ message: 'Logged out successfully' });
 });
 
@@ -186,6 +186,33 @@ router.put('/me', requireAuth, async (req: AuthRequest, res: Response) => {
     res.json({ message: 'Profile updated successfully', user: updatedUser });
   } catch (error: any) {
     res.status(400).json({ error: error.message });
+  }
+});
+
+
+router.get('/dashboard', requireAuth, async (req: AuthRequest, res: Response) => {
+  if (!req.user) return;
+  try {
+    const [user] = await db.select({
+      id: users.id, email: users.email, username: users.username, avatar_url: users.avatar_url,
+      role: users.role, last_sign_in_at: users.last_sign_in_at, email_verified: users.email_verified,
+      created_at: users.created_at, metadata: users.metadata, auth_provider: users.auth_provider
+    }).from(users).where(eq(users.id, req.user.id)).limit(1);
+
+    const activeSessions = await db.select().from(sessions).where(eq(sessions.user_id, req.user.id)).orderBy(desc(sessions.created_at));
+    const userApiKeys = await db.select().from(apiKeys).where(eq(apiKeys.user_id, req.user.id)).orderBy(desc(apiKeys.created_at));
+    const userEmailHistory = await db.select().from(emailMessages).where(eq(emailMessages.user_id, req.user.id)).orderBy(desc(emailMessages.created_at));
+    const userAiLogs = await db.select().from(aiLogs).where(eq(aiLogs.user_id, req.user.id)).orderBy(desc(aiLogs.created_at));
+
+    res.json({
+      user,
+      sessions: activeSessions,
+      apiKeys: userApiKeys,
+      emailMessages: userEmailHistory,
+      aiLogs: userAiLogs
+    });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message || 'Failed to fetch dashboard data' });
   }
 });
 

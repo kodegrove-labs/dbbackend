@@ -38,14 +38,12 @@ export const registerUserFlow = async (email: string, password: string, username
   });
 
   // Send emails sequentially to avoid SMTP concurrent connection drops
-  (async () => {
-    try {
-      await sendWelcomeEmail(email, username || email.split('@')[0]);
-      await sendVerificationEmail(email, token);
-    } catch (e) {
-      console.error('Failed to send registration emails:', e);
-    }
-  })();
+  try {
+    await sendWelcomeEmail(email, username || email.split('@')[0]);
+    await sendVerificationEmail(email, token);
+  } catch (e) {
+    console.error('Failed to send registration emails:', e);
+  }
 
   return { id: userId, email };
 };
