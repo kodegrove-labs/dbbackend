@@ -149,3 +149,52 @@ export const sendPasswordResetEmail = async (to: string, token: string) => {
     'password_reset'
   );
 };
+
+export const sendInvoiceEmail = async (to: string, amount: string, invoiceId: string) => {
+  const appName = 'My App';
+  const name = to.split('@')[0];
+  const date = new Date().toLocaleDateString();
+  const receiptLink = `${process.env.APP_URL || 'http://localhost:3000'}/receipt/${invoiceId}`;
+  
+  const { subject, html, text } = templates.invoice({ name, appName, amount, invoiceId, date, receiptLink });
+  
+  return sendEmail(
+    to,
+    subject,
+    text,
+    html,
+    'invoice'
+  );
+};
+
+export const sendSecurityAlertEmail = async (to: string, deviceName: string, location: string) => {
+  const appName = 'My App';
+  const name = to.split('@')[0];
+  const time = new Date().toLocaleString();
+  const reviewLink = `${process.env.APP_URL || 'http://localhost:3000'}/security`;
+  
+  const { subject, html, text } = templates.securityAlert({ name, appName, deviceName, location, time, reviewLink });
+  
+  return sendEmail(
+    to,
+    subject,
+    text,
+    html,
+    'security_alert'
+  );
+};
+
+export const sendInvitationEmail = async (to: string, inviterName: string, teamName: string) => {
+  const appName = 'My App';
+  const inviteLink = `${process.env.APP_URL || 'http://localhost:3000'}/invite/accept`;
+  
+  const { subject, html, text } = templates.invitation({ inviterName, teamName, appName, inviteLink });
+  
+  return sendEmail(
+    to,
+    subject,
+    text,
+    html,
+    'invitation'
+  );
+};

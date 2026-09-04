@@ -72,7 +72,7 @@ export default function ApiKeysTab() {
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8 w-full max-w-4xl text-left">
+    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8 w-full max-w-4xl mx-auto">
       <div className="flex items-center gap-3 mb-6">
         <div className="p-2 bg-indigo-50 rounded-lg text-indigo-600">
           <Key className="w-5 h-5" />
