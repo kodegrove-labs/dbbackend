@@ -8,13 +8,30 @@ import crypto from 'crypto';
 let etherealAccount: any = null;
 let transporter: any = null;
 
+export function isRealSmtpConfigured(): boolean {
+  return Boolean(process.env.SMTP_HOST && process.env.SMTP_USER);
+}
+
+export function getSmtpStatus() {
+  return {
+    isConfigured: isRealSmtpConfigured(),
+    host: process.env.SMTP_HOST || 'smtp.ethereal.email (test sandbox)',
+    port: parseInt(process.env.SMTP_PORT || '587'),
+    from: process.env.SMTP_FROM || process.env.SMTP_USER || '"Auth Service" <no-reply@example.com>',
+    user: process.env.SMTP_USER || 'ethereal test account',
+    isEthereal: !isRealSmtpConfigured() || (process.env.SMTP_HOST || '').includes('ethereal')
+  };
+}
+
 async function getTransporter() {
   if (transporter) return transporter;
 
-  if (process.env.SMTP_HOST && process.env.SMTP_USER) {
+  if (isRealSmtpConfigured()) {
+    const port = parseInt(process.env.SMTP_PORT || '587');
     transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST,
-      port: parseInt(process.env.SMTP_PORT || '587'),
+      port,
+      secure: port === 465, // Must be true for port 465 (SMTPS)
       auth: {
         user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASS,
@@ -28,7 +45,7 @@ async function getTransporter() {
     transporter = nodemailer.createTransport({
       host: 'smtp.ethereal.email',
       port: 587,
-      secure: false, // true for 465, false for other ports
+      secure: false,
       auth: {
         user: etherealAccount.user,
         pass: etherealAccount.pass,
@@ -38,15 +55,25 @@ async function getTransporter() {
   return transporter;
 }
 
-export const sendEmail = async (to: string, subject: string, text: string, html?: string, templateName: string = 'custom') => {
+export const sendEmail = async (
+  to: string, 
+  subject: string, 
+  text: string, 
+  html?: string, 
+  templateName: string = 'custom',
+  senderUserId?: string | null
+) => {
   const messageId = crypto.randomUUID();
-  let userId = null;
+  let userId = senderUserId || null;
   
-  try {
-    const userRes = await db.select().from(users).where(eq(users.email, to)).limit(1);
-    if (userRes.length > 0) userId = userRes[0].id;
-  } catch (e) {
-    // ignore
+  // If no explicit sender specified (e.g. system welcome/verification emails), associate with recipient if they are in DB
+  if (!userId) {
+    try {
+      const userRes = await db.select().from(users).where(eq(users.email, to)).limit(1);
+      if (userRes.length > 0) userId = userRes[0].id;
+    } catch (e) {
+      // ignore
+    }
   }
 
   // Pre-insert pending state
@@ -64,8 +91,11 @@ export const sendEmail = async (to: string, subject: string, text: string, html?
 
   try {
     const t = await getTransporter();
+    const isEthereal = !isRealSmtpConfigured() || (process.env.SMTP_HOST || '').includes('ethereal');
+    const fromAddress = process.env.SMTP_FROM || (process.env.SMTP_USER ? `"${process.env.SMTP_USER}" <${process.env.SMTP_USER}>` : '"Auth Service" <no-reply@example.com>');
+
     const info = await t.sendMail({
-      from: process.env.SMTP_FROM || '"Auth Service" <no-reply@example.com>',
+      from: fromAddress,
       to,
       subject,
       text,
@@ -73,9 +103,9 @@ export const sendEmail = async (to: string, subject: string, text: string, html?
     });
     
     let previewUrl = '';
-    if (!process.env.SMTP_HOST || process.env.SMTP_HOST.includes('ethereal')) {
+    if (isEthereal) {
       previewUrl = nodemailer.getTestMessageUrl(info) || '';
-      console.log('Preview URL: %s', previewUrl);
+      console.log('Preview URL (Ethereal test inbox): %s', previewUrl);
     }
     
     // Update successful state
@@ -91,8 +121,14 @@ export const sendEmail = async (to: string, subject: string, text: string, html?
       console.error('Failed to update email status', e);
     }
     
-    return info;
-  } catch (error) {
+    return {
+      ...info,
+      previewUrl,
+      isEthereal,
+      from: fromAddress,
+      userId
+    };
+  } catch (error: any) {
     console.error('Error sending email:', error);
     
     try {
@@ -103,7 +139,7 @@ export const sendEmail = async (to: string, subject: string, text: string, html?
       // ignore
     }
     
-    throw new Error('Could not send email');
+    throw new Error(error.message || 'Could not send email');
   }
 };
 

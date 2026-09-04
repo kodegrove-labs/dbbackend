@@ -7,7 +7,7 @@ const router = Router();
 // Protect all API key endpoints so only authenticated users can access them
 router.use(requireAuth);
 
-router.post('/generate', requireRoles(['admin', 'editor']), async (req: AuthRequest, res: Response) => {
+router.post('/generate', async (req: AuthRequest, res: Response) => {
   try {
     const { name } = req.body;
     const userId = req.user!.id;
