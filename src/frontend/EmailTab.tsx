@@ -1,10 +1,38 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { EmailPreviewSkeleton, EmailSendingSkeleton } from './skeletons/EmailPreviewSkeleton';
+
+interface SmtpStatus {
+  isConfigured: boolean;
+  host: string;
+  port: number;
+  from: string;
+  user: string;
+  isEthereal: boolean;
+  serviceKeyConfigured: boolean;
+}
+
+interface CurrentUser {
+  id: string;
+  email: string;
+  role: string;
+}
 
 export default function EmailTab() {
   const [mode, setMode] = useState<'custom' | 'template'>('template');
   const [to, setTo] = useState('guptaharshit279@gmail.com');
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [actionType, setActionType] = useState<'preview' | 'send' | null>(null);
   const [responseMsg, setResponseMsg] = useState('');
+  const [deliveryDetails, setDeliveryDetails] = useState<{
+    previewUrl?: string;
+    isEthereal?: boolean;
+    sender?: string;
+    senderUserId?: string;
+  } | null>(null);
+
+  // Auth & SMTP State
+  const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
+  const [smtpStatus, setSmtpStatus] = useState<SmtpStatus | null>(null);
   
   // Preview State
   const [previewHtml, setPreviewHtml] = useState('');
@@ -28,14 +56,45 @@ export default function EmailTab() {
   const [inviterName, setInviterName] = useState('Alex Doe');
   const [teamName, setTeamName] = useState('Engineering Team');
 
-  // API Key State
+  // API Key State (Optional if logged in)
   const [apiKey, setApiKey] = useState('my-secret-service-key');
+
+  // Load current user and SMTP configuration on mount
+  useEffect(() => {
+    fetch('/api/auth/me')
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        if (data && data.user) {
+          setCurrentUser(data.user);
+        }
+      })
+      .catch(() => {});
+
+    fetch('/api/email/status')
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        if (data) setSmtpStatus(data);
+      })
+      .catch(() => {});
+  }, []);
+
+  const getHeaders = () => {
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json'
+    };
+    if (apiKey.trim()) {
+      headers['x-api-key'] = apiKey.trim();
+    }
+    return headers;
+  };
 
   const handlePreview = async () => {
     setStatus('loading');
+    setActionType('preview');
     setResponseMsg('');
     setPreviewHtml('');
     setPreviewSubject('');
+    setDeliveryDetails(null);
     
     try {
       const payload = {
@@ -62,24 +121,24 @@ export default function EmailTab() {
 
       const res = await fetch('/api/email/preview', {
         method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'x-api-key': apiKey
-        },
+        headers: getHeaders(),
         body: JSON.stringify(payload)
       });
       const data = await res.json();
       
       if (res.ok && data.success) {
         setStatus('idle');
+        setActionType(null);
         setPreviewSubject(data.subject);
         setPreviewHtml(data.html);
       } else {
         setStatus('error');
+        setActionType(null);
         setResponseMsg(data.error || 'Failed to generate preview');
       }
     } catch (err: any) {
       setStatus('error');
+      setActionType(null);
       setResponseMsg('Network error: ' + err.message);
     }
   };
@@ -87,7 +146,9 @@ export default function EmailTab() {
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
     setStatus('loading');
+    setActionType('send');
     setResponseMsg('');
+    setDeliveryDetails(null);
     
     try {
       let endpoint = '';
@@ -124,42 +185,87 @@ export default function EmailTab() {
 
       const res = await fetch(endpoint, {
         method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'x-api-key': apiKey
-        },
+        headers: getHeaders(),
         body: JSON.stringify(payload)
       });
       const data = await res.json();
       
       if (res.ok && data.success) {
         setStatus('success');
-        setResponseMsg('Email sent successfully! (Check your inbox)');
+        setActionType(null);
+        setResponseMsg(data.message || 'Email sent successfully!');
+        setDeliveryDetails({
+          previewUrl: data.previewUrl,
+          isEthereal: data.isEthereal,
+          sender: data.sender,
+          senderUserId: data.senderUserId
+        });
       } else {
         setStatus('error');
+        setActionType(null);
         setResponseMsg(data.error || 'Failed to send email');
       }
     } catch (err: any) {
       setStatus('error');
+      setActionType(null);
       setResponseMsg('Network error: ' + err.message);
     }
   };
 
   return (
     <div className={`bg-white rounded-xl shadow-sm border border-gray-100 p-8 w-full mx-auto ${mode === 'template' ? 'max-w-5xl' : 'max-w-xl'}`}>
+      {/* Configuration & Identity Banners */}
+      <div className="mb-6 space-y-2">
+        <div className="flex flex-wrap items-center justify-between gap-2 p-3 bg-slate-50 border border-slate-200 rounded-lg text-xs">
+          <div className="flex items-center gap-2">
+            <span className="font-semibold text-slate-700">Auth Identity:</span>
+            {currentUser ? (
+              <span className="inline-flex items-center px-2 py-0.5 rounded bg-blue-100 text-blue-800 font-medium">
+                👤 {currentUser.email} ({currentUser.role})
+              </span>
+            ) : (
+              <span className="inline-flex items-center px-2 py-0.5 rounded bg-amber-100 text-amber-800">
+                ⚠️ Guest / API Key mode
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="font-semibold text-slate-700">SMTP Transport:</span>
+            {smtpStatus?.isConfigured && !smtpStatus?.isEthereal ? (
+              <span className="inline-flex items-center px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 font-medium" title={smtpStatus.from}>
+                🟢 Live SMTP ({smtpStatus.host})
+              </span>
+            ) : (
+              <span className="inline-flex items-center px-2 py-0.5 rounded bg-yellow-100 text-yellow-800 font-medium">
+                🟡 Ethereal Sandbox (Test Inbox)
+              </span>
+            )}
+          </div>
+        </div>
+
+        {smtpStatus?.isConfigured && !smtpStatus?.isEthereal && (
+          <div className="px-3 py-1.5 bg-blue-50/60 border border-blue-100 rounded text-xs text-blue-800">
+            ✉️ Outgoing sender envelope: <span className="font-mono font-medium">{smtpStatus.from}</span>
+          </div>
+        )}
+      </div>
+
       <div className="mb-6 text-center">
         <h2 className="text-xl font-bold text-gray-800">Test Email API</h2>
+        <p className="text-xs text-gray-500 mt-1">
+          Send emails and verify delivery. Attributed to your user account in the Database Tab.
+        </p>
         <div className="flex justify-center mt-4 bg-gray-100 p-1 rounded-lg max-w-sm mx-auto">
           <button 
             type="button"
-            onClick={() => { setMode('template'); setPreviewHtml(''); }}
+            onClick={() => { setMode('template'); setPreviewHtml(''); setDeliveryDetails(null); }}
             className={`flex-1 py-1.5 text-sm font-medium rounded-md transition ${mode === 'template' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
           >
             Pre-built Templates
           </button>
           <button 
             type="button"
-            onClick={() => { setMode('custom'); setPreviewHtml(''); }}
+            onClick={() => { setMode('custom'); setPreviewHtml(''); setDeliveryDetails(null); }}
             className={`flex-1 py-1.5 text-sm font-medium rounded-md transition ${mode === 'custom' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
           >
             Custom Message
@@ -170,17 +276,24 @@ export default function EmailTab() {
       <div className={`grid ${mode === 'template' ? 'md:grid-cols-2 gap-8' : 'grid-cols-1'}`}>
         <div>
           <form onSubmit={handleSend} className="space-y-4">
-            <div className="bg-blue-50/50 p-4 rounded-lg border border-blue-100 mb-6">
-              <label className="block text-sm font-medium text-blue-900 mb-1">Service API Key</label>
+            <div className="bg-blue-50/50 p-4 rounded-lg border border-blue-100 mb-4">
+              <div className="flex justify-between items-center mb-1">
+                <label className="block text-sm font-medium text-blue-900">
+                  Service API Key {currentUser && <span className="text-xs font-normal text-blue-600">(Optional when logged in)</span>}
+                </label>
+              </div>
               <input 
                 type="password" 
                 value={apiKey}
                 onChange={(e) => setApiKey(e.target.value)}
-                required
-                className="w-full px-3 py-2 border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white text-blue-900"
-                placeholder="Enter API Key to authorize"
+                className="w-full px-3 py-2 border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white text-blue-900 text-sm"
+                placeholder={currentUser ? "Using logged-in user session (or enter API key)" : "Enter API Key to authorize"}
               />
-              <p className="text-xs text-blue-600 mt-1">Required to connect to the email microservice securely.</p>
+              <p className="text-xs text-blue-600 mt-1">
+                {currentUser 
+                  ? `Authenticated as ${currentUser.email}. Requests will be attributed to your user.` 
+                  : "Required for unauthenticated clients or external scripts."}
+              </p>
             </div>
 
             <div>
@@ -385,9 +498,40 @@ export default function EmailTab() {
             )}
           </form>
 
+          {status === 'loading' && actionType === 'send' && (
+            <EmailSendingSkeleton />
+          )}
+
           {status === 'success' && (
-            <div className="mt-4 p-3 bg-green-50 border border-green-200 text-green-800 text-sm rounded-lg text-center">
-              {responseMsg}
+            <div className="mt-4 p-4 bg-green-50 border border-green-200 text-green-800 text-sm rounded-lg space-y-2">
+              <div className="font-semibold">{responseMsg}</div>
+              {deliveryDetails?.isEthereal && deliveryDetails.previewUrl ? (
+                <div className="bg-amber-50 border border-amber-200 p-2.5 rounded text-amber-900 text-xs mt-2">
+                  <p className="font-medium mb-1">
+                    ⚠️ Captured in Ethereal Test Sandbox:
+                  </p>
+                  <p className="mb-2">
+                    This email was sent to a virtual sandbox inbox because live SMTP was not active when the message was processed.
+                  </p>
+                  <a
+                    href={deliveryDetails.previewUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-block px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white font-medium rounded text-xs transition"
+                  >
+                    Open Sandbox Email Preview ↗
+                  </a>
+                </div>
+              ) : (
+                <div className="text-xs text-green-700 mt-1">
+                  Sent via live Google SMTP from <span className="font-mono font-medium">{deliveryDetails?.sender || 'learncatterpiweb@gmail.com'}</span>. Check your inbox and spam folder.
+                </div>
+              )}
+              {currentUser && (
+                <div className="text-xs text-slate-500 pt-1 border-t border-green-100">
+                  Tracked under user ID: <span className="font-mono">{currentUser.id}</span> (check the Database Tab to inspect your record).
+                </div>
+              )}
             </div>
           )}
           
@@ -405,7 +549,9 @@ export default function EmailTab() {
             </div>
             
             <div className="flex-1 overflow-hidden relative">
-              {!previewHtml ? (
+              {status === 'loading' && actionType === 'preview' ? (
+                <EmailPreviewSkeleton />
+              ) : !previewHtml ? (
                 <div className="absolute inset-0 flex items-center justify-center text-gray-400 text-sm p-6 text-center">
                   Click "Preview HTML" to generate the rendering based on the fields provided.
                 </div>

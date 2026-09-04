@@ -13,7 +13,9 @@ vi.mock('../src/flow', () => ({
 }));
 
 // Mock the DB and Middleware for the /me route
-const MOCK_UUID = '123e4567-e89b-12d3-a456-426614174000';
+const { MOCK_UUID } = vi.hoisted(() => ({
+  MOCK_UUID: '123e4567-e89b-12d3-a456-426614174000' as `${string}-${string}-${string}-${string}-${string}`
+}));
 
 vi.mock('../src/db', () => ({
   db: {
@@ -52,7 +54,7 @@ describe('Auth API Routes', () => {
       expect(response.status).toBe(201);
       expect(response.body.message).toContain('User registered');
       expect(response.body.user.email).toBe('test@example.com');
-      expect(authFlow.registerUserFlow).toHaveBeenCalledWith('test@example.com', 'password123');
+      expect(authFlow.registerUserFlow).toHaveBeenCalledWith('test@example.com', 'password123', undefined);
     });
 
     it('should fail with invalid email', async () => {

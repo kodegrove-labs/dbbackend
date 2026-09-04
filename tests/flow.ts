@@ -7,7 +7,7 @@
  * Run with: npx tsx tests/flow.ts
  */
 
-const API_URL = process.env.APP_URL || 'http://localhost:3000';
+const API_URL = process.env.TEST_BASE_URL || 'http://localhost:3000';
 const TEST_EMAIL = `test-${Date.now()}@example.com`;
 const TEST_PASSWORD = 'password12345!';
 

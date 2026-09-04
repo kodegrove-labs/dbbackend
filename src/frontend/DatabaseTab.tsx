@@ -2,10 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { FlatView } from './database/FlatView';
 import { RelationalView } from './database/RelationalView';
 import { RecordModal } from './database/RecordModal';
+import { DatabaseSkeleton } from './skeletons/DatabaseSkeleton';
 
 export default function DatabaseTab() {
   const [data, setData] = useState<any>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [viewMode, setViewMode] = useState<'flat' | 'relational'>('flat');
   
@@ -144,17 +145,17 @@ export default function DatabaseTab() {
         </div>
       </div>
 
-      {error && (
+      {error && !loading && (
         <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-lg mb-6 text-sm">
           <strong>Connection Error:</strong> {error}
         </div>
       )}
 
-      {!data && !error && !loading && (
+      {loading ? (
+        <DatabaseSkeleton viewMode={viewMode} />
+      ) : !data && !error ? (
         <div className="text-center text-gray-500 py-10">No data loaded.</div>
-      )}
-
-      {viewMode === 'flat' ? (
+      ) : viewMode === 'flat' ? (
         <FlatView 
           data={data} 
           sortConfig={sortConfig} 
