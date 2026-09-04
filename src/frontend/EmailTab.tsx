@@ -20,6 +20,14 @@ export default function EmailTab() {
   const [appName, setAppName] = useState('My Awesome App');
   const [link, setLink] = useState('https://example.com/verify');
   
+  // Specific Template States
+  const [amount, setAmount] = useState('$49.00');
+  const [invoiceId, setInvoiceId] = useState('INV-2023-001');
+  const [deviceName, setDeviceName] = useState('MacBook Pro (Safari)');
+  const [location, setLocation] = useState('San Francisco, CA, USA');
+  const [inviterName, setInviterName] = useState('Alex Doe');
+  const [teamName, setTeamName] = useState('Engineering Team');
+
   // API Key State
   const [apiKey, setApiKey] = useState('my-secret-service-key');
 
@@ -37,7 +45,18 @@ export default function EmailTab() {
           appName,
           verifyLink: template === 'verifyEmail' ? link : undefined,
           resetLink: template === 'passwordReset' ? link : undefined,
-          dashboardLink: template === 'welcome' ? link : undefined
+          dashboardLink: template === 'welcome' ? link : undefined,
+          receiptLink: template === 'invoice' ? link : undefined,
+          reviewLink: template === 'securityAlert' ? link : undefined,
+          inviteLink: template === 'invitation' ? link : undefined,
+          amount,
+          invoiceId,
+          date: new Date().toLocaleDateString(),
+          deviceName,
+          location,
+          time: new Date().toLocaleString(),
+          inviterName,
+          teamName
         }
       };
 
@@ -87,7 +106,18 @@ export default function EmailTab() {
             appName,
             verifyLink: template === 'verifyEmail' ? link : undefined,
             resetLink: template === 'passwordReset' ? link : undefined,
-            dashboardLink: template === 'welcome' ? link : undefined
+            dashboardLink: template === 'welcome' ? link : undefined,
+            receiptLink: template === 'invoice' ? link : undefined,
+            reviewLink: template === 'securityAlert' ? link : undefined,
+            inviteLink: template === 'invitation' ? link : undefined,
+            amount,
+            invoiceId,
+            date: new Date().toLocaleDateString(),
+            deviceName,
+            location,
+            time: new Date().toLocaleString(),
+            inviterName,
+            teamName
           }
         };
       }
@@ -200,19 +230,26 @@ export default function EmailTab() {
                     <option value="welcome">Welcome Email</option>
                     <option value="verifyEmail">Email Verification</option>
                     <option value="passwordReset">Password Reset</option>
+                    <option value="invoice">Payment Invoice</option>
+                    <option value="securityAlert">Security Alert</option>
+                    <option value="invitation">Team Invitation</option>
                   </select>
                 </div>
+                
+                {/* Common Fields */}
                 <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Recipient Name</label>
-                    <input 
-                      type="text" 
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      required
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                    />
-                  </div>
+                  {template !== 'invitation' && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Recipient Name</label>
+                      <input 
+                        type="text" 
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        required
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                      />
+                    </div>
+                  )}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">App Name</label>
                     <input 
@@ -224,18 +261,96 @@ export default function EmailTab() {
                     />
                   </div>
                 </div>
-                {(template === 'verifyEmail' || template === 'passwordReset' || template === 'welcome') && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Action Link (URL)</label>
-                    <input 
-                      type="url" 
-                      value={link}
-                      onChange={(e) => setLink(e.target.value)}
-                      required
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                    />
+
+                {/* Specific Fields: Invoice */}
+                {template === 'invoice' && (
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Amount</label>
+                      <input 
+                        type="text" 
+                        value={amount}
+                        onChange={(e) => setAmount(e.target.value)}
+                        required
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Invoice ID</label>
+                      <input 
+                        type="text" 
+                        value={invoiceId}
+                        onChange={(e) => setInvoiceId(e.target.value)}
+                        required
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                      />
+                    </div>
                   </div>
                 )}
+
+                {/* Specific Fields: Security Alert */}
+                {template === 'securityAlert' && (
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Device Name</label>
+                      <input 
+                        type="text" 
+                        value={deviceName}
+                        onChange={(e) => setDeviceName(e.target.value)}
+                        required
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
+                      <input 
+                        type="text" 
+                        value={location}
+                        onChange={(e) => setLocation(e.target.value)}
+                        required
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* Specific Fields: Invitation */}
+                {template === 'invitation' && (
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Inviter Name</label>
+                      <input 
+                        type="text" 
+                        value={inviterName}
+                        onChange={(e) => setInviterName(e.target.value)}
+                        required
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Team Name</label>
+                      <input 
+                        type="text" 
+                        value={teamName}
+                        onChange={(e) => setTeamName(e.target.value)}
+                        required
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* Single Link Field */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Action Link (URL)</label>
+                  <input 
+                    type="url" 
+                    value={link}
+                    onChange={(e) => setLink(e.target.value)}
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                  />
+                </div>
               </>
             )}
 

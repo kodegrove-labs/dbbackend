@@ -69,59 +69,54 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col p-6 font-sans text-gray-800">
-      <div className="max-w-7xl w-full mx-auto mb-8 text-center">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Centralized API Dashboard</h1>
-        <p className="text-gray-500 text-sm">Testing interface for Auth, Email, and Database services</p>
-      </div>
+    <div className="min-h-screen bg-gray-50 flex flex-col items-center p-4 md:p-8 font-sans text-gray-800">
+      
+      {/* Header Section */}
+      {/*<header className="w-full mb-8 text-center">
+        <h1 className="text-3xl md:text-4xl font-extrabold text-gray-900 tracking-tight mb-3">
+          Centralized API Dashboard
+        </h1>
+        <p className="text-gray-500 text-base md:text-lg">
+          Testing interface for Auth, Email, and Database services
+        </p>
+      </header>*/}
 
-      <div className="max-w-7xl w-full mx-auto mb-8 flex flex-wrap gap-2 justify-center">
-        <button 
-          onClick={() => setActiveTab('profile')}
-          className={`px-4 py-2 rounded-full text-sm font-medium transition ${activeTab === 'profile' ? 'bg-blue-600 text-white shadow-md' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'}`}
-        >
-          My Profile
-        </button>
-        <button 
-          onClick={() => setActiveTab('docs')}
-          className={`px-4 py-2 rounded-full text-sm font-medium transition ${activeTab === 'docs' ? 'bg-blue-600 text-white shadow-md' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'}`}
-        >
-          API Docs
-        </button>
-        <button 
-          onClick={() => setActiveTab('auth')}
-          className={`px-4 py-2 rounded-full text-sm font-medium transition ${activeTab === 'auth' ? 'bg-blue-600 text-white shadow-md' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'}`}
-        >
-          Auth Testing
-        </button>
-        <button 
-          onClick={() => setActiveTab('email')}
-          className={`px-4 py-2 rounded-full text-sm font-medium transition ${activeTab === 'email' ? 'bg-blue-600 text-white shadow-md' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'}`}
-        >
-          Email Testing
-        </button>
-        <button 
-          onClick={() => setActiveTab('db')}
-          className={`px-4 py-2 rounded-full text-sm font-medium transition ${activeTab === 'db' ? 'bg-blue-600 text-white shadow-md' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'}`}
-        >
-          Database Viewer
-        </button>
-        <button 
-          onClick={() => setActiveTab('keys')}
-          className={`px-4 py-2 rounded-full text-sm font-medium transition ${activeTab === 'keys' ? 'bg-blue-600 text-white shadow-md' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'}`}
-        >
-          API Keys
-        </button>
-      </div>
+      {/* Navigation Pills */}
+      <nav className="w-full flex flex-wrap gap-3 justify-center mb-2">
+        {[
+          { id: 'profile', label: 'My Profile' },
+          { id: 'docs', label: 'API Docs' },
+          { id: 'auth', label: 'Auth Testing' },
+          { id: 'email', label: 'Email Testing' },
+          { id: 'db', label: 'Database Viewer' },
+          { id: 'keys', label: 'API Keys' },
+        ].map((tab) => (
+          <button 
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id as any)}
+            className={`px-5 py-2.5 rounded-full text-sm font-semibold transition-all duration-200 
+              ${activeTab === tab.id 
+                ? 'bg-blue-600 text-white shadow-md ring-2 ring-blue-600 ring-offset-2 ring-offset-gray-50' 
+                : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-100 hover:text-gray-900 shadow-sm'}`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </nav>
 
-      <div className="flex-1 flex flex-col items-center">
-        {activeTab === 'profile' && <ProfileTab />}
-        {activeTab === 'docs' && <DocsTab />}
-        {activeTab === 'auth' && <AuthTab />}
-        {activeTab === 'email' && <EmailTab />}
-        {activeTab === 'db' && <DatabaseTab />}
-        {activeTab === 'keys' && <ApiKeysTab />}
-      </div>
+      {/* The Frame */}
+      <main className="w-full flex-1 flex flex-col bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden relative">
+        <div className="h-2 w-full bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 absolute top-0 left-0"></div>
+        <div className="p-6 md:p-10 flex-1 overflow-y-auto mt-2">
+          {activeTab === 'profile' && <ProfileTab />}
+          {activeTab === 'docs' && <DocsTab />}
+          {activeTab === 'auth' && <AuthTab />}
+          {activeTab === 'email' && <EmailTab />}
+          {activeTab === 'db' && <DatabaseTab />}
+          {activeTab === 'keys' && <ApiKeysTab />}
+        </div>
+      </main>
+
     </div>
   );
 }
