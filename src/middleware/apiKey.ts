@@ -20,13 +20,18 @@ export interface ApiKeyRequest extends Request {
 }
 
 export const requireApiKey = async (req: ApiKeyRequest, res: Response, next: NextFunction) => {
-  const apiKey = req.headers['x-api-key'] as string;
+  const authHeader = req.headers.authorization;
+  const bearerToken = authHeader?.startsWith('Bearer ') ? authHeader.split(' ')[1] : undefined;
+  const rawApiKeyHeader = req.headers['x-api-key'] as string;
   const configuredKey = process.env.SERVICE_API_KEY || 'my-secret-service-key';
 
-  // Helper to extract session user if present
-  const tryAttachSessionUser = async () => {
+  // Helper to extract session user from JWT or cookies
+  const tryAttachSessionUser = async (): Promise<boolean> => {
     try {
-      let token = req.cookies?.token || req.headers.authorization?.split(' ')[1];
+      // Determine if bearerToken is a JWT (3 dot-separated parts)
+      const isBearerJwt = bearerToken && bearerToken.split('.').length === 3;
+      let token = (isBearerJwt ? bearerToken : undefined) || req.cookies?.token;
+
       if (!token && req.cookies?.refresh_token) {
         try {
           const result = await refreshUserFlow(req.cookies.refresh_token);
@@ -42,7 +47,7 @@ export const requireApiKey = async (req: ApiKeyRequest, res: Response, next: Nex
         }
       }
 
-      if (token && !token.startsWith('sk_live_')) {
+      if (token && token.split('.').length === 3) {
         const decoded = jwt.verify(token, JWT_SECRET) as { id: string, email: string };
         const [u] = await db.select().from(users).where(eq(users.id, decoded.id)).limit(1);
         if (u) {
@@ -52,21 +57,36 @@ export const requireApiKey = async (req: ApiKeyRequest, res: Response, next: Nex
         }
       }
     } catch {
-      // ignore
+      // ignore token decode/verify error
     }
     return false;
   };
 
-  // 1. If API key is provided
+  // Determine if an API key was explicitly provided
+  // An API key can come from 'x-api-key' header OR Authorization: Bearer <key> (when not a JWT)
+  const isBearerApiKey = bearerToken && bearerToken.split('.').length !== 3;
+  const apiKey = rawApiKeyHeader || (isBearerApiKey ? bearerToken : undefined);
+
+  // 1. If an API key is provided, validate it
   if (apiKey) {
-    // 1a. Check environment service key (or default fallback)
+    // 1a. Check environment service key
     if (apiKey === configuredKey) {
-      // Check if session user is also logged in
-      await tryAttachSessionUser();
+      // If a session user is also logged in, preserve their identity
+      const sessionFound = await tryAttachSessionUser();
+      if (!sessionFound && !req.user) {
+        const [adminUser] = await db.select().from(users).where(eq(users.role, 'admin')).limit(1);
+        if (adminUser) {
+          req.user = { id: adminUser.id, email: adminUser.email, role: adminUser.role };
+          req.apiUser = { id: adminUser.id };
+        } else {
+          req.user = { id: '00000000-0000-0000-0000-000000000000', email: 'service@internal', role: 'admin' };
+          req.apiUser = { id: '00000000-0000-0000-0000-000000000000' };
+        }
+      }
       return next();
     }
 
-    // 1b. Check the database for user-generated API keys
+    // 1b. Check database for user-generated API keys
     try {
       const keyHash = crypto.createHash('sha256').update(apiKey).digest('hex');
       const matchedKey = await db.select().from(apiKeys).where(eq(apiKeys.key_hash, keyHash)).limit(1);
@@ -74,7 +94,6 @@ export const requireApiKey = async (req: ApiKeyRequest, res: Response, next: Nex
       if (matchedKey.length > 0) {
         req.apiUser = { id: matchedKey[0].user_id };
 
-        // Attach user info if found
         const [keyOwner] = await db.select().from(users).where(eq(users.id, matchedKey[0].user_id)).limit(1);
         if (keyOwner) {
           req.user = { id: keyOwner.id, email: keyOwner.email, role: keyOwner.role };
@@ -92,11 +111,11 @@ export const requireApiKey = async (req: ApiKeyRequest, res: Response, next: Nex
     return;
   }
 
-  // 2. If no API key provided, fallback to active authenticated user session (cookie/Bearer)
+  // 2. If no API key provided, authenticate using active user session (Bearer JWT or HttpOnly cookie)
   const hasSession = await tryAttachSessionUser();
   if (hasSession) {
     return next();
   }
 
-  res.status(401).json({ error: 'Unauthorized: Missing x-api-key header or active login session' });
+  res.status(401).json({ error: 'Unauthorized: Missing valid API Key or active login session' });
 };

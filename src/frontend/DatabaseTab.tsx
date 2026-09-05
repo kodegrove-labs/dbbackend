@@ -41,11 +41,23 @@ export default function DatabaseTab() {
   const [jsonStr, setJsonStr] = useState('');
   const [modalError, setModalError] = useState('');
 
+  const getAuthHeaders = (extra: Record<string, string> = {}) => {
+    const headers: Record<string, string> = { ...extra };
+    const token = localStorage.getItem('token');
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    return headers;
+  };
+
   const fetchDatabase = async () => {
     setLoading(true);
     setError('');
     try {
-      const res = await fetch('/api/admin/db-dump');
+      const res = await fetch('/api/admin/db-dump', {
+        headers: getAuthHeaders(),
+        credentials: 'include'
+      });
       if (res.status === 401) {
         setError('Please log in via the Auth Testing tab to view the database.');
         return;
@@ -84,7 +96,8 @@ export default function DatabaseTab() {
       
       const res = await fetch(url, {
         method,
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+        credentials: 'include',
         body: JSON.stringify(payload)
       });
       const json = await res.json();
@@ -103,7 +116,9 @@ export default function DatabaseTab() {
     if (!confirm('Are you sure you want to delete this record?')) return;
     try {
       const res = await fetch(`/api/admin/records/${table}/${id}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        headers: getAuthHeaders(),
+        credentials: 'include'
       });
       const json = await res.json();
       if (res.ok && json.success) {

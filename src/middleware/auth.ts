@@ -19,7 +19,11 @@ export interface AuthRequest extends Request {
 
 export const requireAuth = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    let token = req.cookies.token || req.headers.authorization?.split(' ')[1];
+    const configuredServiceKey = process.env.SERVICE_API_KEY || 'my-secret-service-key';
+    const authHeader = req.headers.authorization;
+    const bearerToken = authHeader?.startsWith('Bearer ') ? authHeader.split(' ')[1] : undefined;
+    const apiKeyHeader = req.headers['x-api-key'] as string;
+    let token = req.cookies.token || bearerToken || apiKeyHeader;
     
     // If no access token but we have a refresh token, try to refresh directly
     if (!token && req.cookies.refresh_token) {
@@ -41,6 +45,18 @@ export const requireAuth = async (req: AuthRequest, res: Response, next: NextFun
     if (!token) {
        res.status(401).json({ error: 'Unauthorized: No token provided' });
        return;
+    }
+
+    // Check if it matches the configured SERVICE_API_KEY from .env
+    if (token === configuredServiceKey) {
+      const [adminUser] = await db.select().from(users).where(eq(users.role, 'admin')).limit(1);
+      if (adminUser) {
+        req.user = { id: adminUser.id, email: adminUser.email, role: adminUser.role };
+      } else {
+        req.user = { id: '00000000-0000-0000-0000-000000000000', email: 'service@internal', role: 'admin' };
+      }
+      next();
+      return;
     }
     
     // Check if it's an API Key

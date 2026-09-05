@@ -57,25 +57,51 @@ export default function EmailTab() {
   const [teamName, setTeamName] = useState('Engineering Team');
 
   // API Key State (Optional if logged in)
-  const [apiKey, setApiKey] = useState('my-secret-service-key');
+  const [apiKey, setApiKey] = useState('');
+  const [smtpLoading, setSmtpLoading] = useState(true);
+
+  const checkSmtpStatus = async () => {
+    setSmtpLoading(true);
+    try {
+      const res = await fetch('/api/email/status', { credentials: 'include' });
+      if (res.ok) {
+        const data = await res.json();
+        setSmtpStatus(data);
+      }
+    } catch {
+      // ignore
+    } finally {
+      setSmtpLoading(false);
+    }
+  };
+
+  const checkUser = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const authHeaders: Record<string, string> = {};
+      if (token) {
+        authHeaders['Authorization'] = `Bearer ${token}`;
+      }
+      const res = await fetch('/api/auth/me', { headers: authHeaders, credentials: 'include' });
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.user) {
+          setCurrentUser(data.user);
+        } else {
+          setCurrentUser(null);
+        }
+      } else {
+        setCurrentUser(null);
+      }
+    } catch {
+      setCurrentUser(null);
+    }
+  };
 
   // Load current user and SMTP configuration on mount
   useEffect(() => {
-    fetch('/api/auth/me')
-      .then(res => res.ok ? res.json() : null)
-      .then(data => {
-        if (data && data.user) {
-          setCurrentUser(data.user);
-        }
-      })
-      .catch(() => {});
-
-    fetch('/api/email/status')
-      .then(res => res.ok ? res.json() : null)
-      .then(data => {
-        if (data) setSmtpStatus(data);
-      })
-      .catch(() => {});
+    checkUser();
+    checkSmtpStatus();
   }, []);
 
   const getHeaders = () => {
@@ -84,6 +110,10 @@ export default function EmailTab() {
     };
     if (apiKey.trim()) {
       headers['x-api-key'] = apiKey.trim();
+    }
+    const token = localStorage.getItem('token');
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
     }
     return headers;
   };
@@ -122,6 +152,7 @@ export default function EmailTab() {
       const res = await fetch('/api/email/preview', {
         method: 'POST',
         headers: getHeaders(),
+        credentials: 'include',
         body: JSON.stringify(payload)
       });
       const data = await res.json();
@@ -186,6 +217,7 @@ export default function EmailTab() {
       const res = await fetch(endpoint, {
         method: 'POST',
         headers: getHeaders(),
+        credentials: 'include',
         body: JSON.stringify(payload)
       });
       const data = await res.json();
@@ -231,7 +263,11 @@ export default function EmailTab() {
           </div>
           <div className="flex items-center gap-2">
             <span className="font-semibold text-slate-700">SMTP Transport:</span>
-            {smtpStatus?.isConfigured && !smtpStatus?.isEthereal ? (
+            {smtpLoading ? (
+              <span className="inline-flex items-center px-2 py-0.5 rounded bg-slate-100 text-slate-600 font-medium animate-pulse">
+                ⏳ Checking Transport...
+              </span>
+            ) : smtpStatus?.isConfigured && !smtpStatus?.isEthereal ? (
               <span className="inline-flex items-center px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 font-medium" title={smtpStatus.from}>
                 🟢 Live SMTP ({smtpStatus.host})
               </span>
@@ -240,6 +276,14 @@ export default function EmailTab() {
                 🟡 Ethereal Sandbox (Test Inbox)
               </span>
             )}
+            <button
+              type="button"
+              onClick={() => { checkSmtpStatus(); checkUser(); }}
+              title="Refresh SMTP status & User Auth"
+              className="text-slate-500 hover:text-slate-800 p-0.5 text-xs"
+            >
+              🔄
+            </button>
           </div>
         </div>
 
@@ -291,8 +335,8 @@ export default function EmailTab() {
               />
               <p className="text-xs text-blue-600 mt-1">
                 {currentUser 
-                  ? `Authenticated as ${currentUser.email}. Requests will be attributed to your user.` 
-                  : "Required for unauthenticated clients or external scripts."}
+                  ? `Authenticated as ${currentUser.email} (${currentUser.role}). Requests are sent using your session and attributed to your user.` 
+                  : "Enter a valid API key (Service API Key or key created in the API Keys tab) if not logged in."}
               </p>
             </div>
 

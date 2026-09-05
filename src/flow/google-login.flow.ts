@@ -10,21 +10,50 @@ const JWT_SECRET = process.env.JWT_SECRET || 'super-secret-jwt-key';
 const REFRESH_SECRET = process.env.REFRESH_SECRET || 'super-secret-refresh-key';
 const googleClient = new OAuth2Client(process.env.VITE_GOOGLE_CLIENT_ID);
 
-export const loginWithGoogleFlow = async (credential: string) => {
+export const loginWithGoogleFlow = async (input: string | { credential?: string; accessToken?: string }) => {
   if (!process.env.VITE_GOOGLE_CLIENT_ID) {
     throw new Error('Google Client ID is not configured');
   }
 
-  const ticket = await googleClient.verifyIdToken({
-    idToken: credential,
-    audience: process.env.VITE_GOOGLE_CLIENT_ID,
-  });
-  const payload = ticket.getPayload();
-  if (!payload || !payload.email) {
-    throw new Error('Invalid Google Token');
-  }
+  let email: string = '';
+  let provider_id: string = '';
+  let email_verified: boolean = false;
+  let name: string = '';
 
-  const { email, sub: provider_id, email_verified } = payload;
+  const credential = typeof input === 'string' ? input : input.credential;
+  const googleAccessToken = typeof input === 'object' ? input.accessToken : undefined;
+
+  if (credential) {
+    const ticket = await googleClient.verifyIdToken({
+      idToken: credential,
+      audience: process.env.VITE_GOOGLE_CLIENT_ID,
+    });
+    const payload = ticket.getPayload();
+    if (!payload || !payload.email) {
+      throw new Error('Invalid Google Token');
+    }
+    email = payload.email;
+    provider_id = payload.sub;
+    email_verified = payload.email_verified === true;
+    name = payload.name || email.split('@')[0];
+  } else if (googleAccessToken) {
+    const userInfoRes = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+      headers: { Authorization: `Bearer ${googleAccessToken}` }
+    });
+    if (!userInfoRes.ok) {
+      throw new Error('Failed to verify Google access token');
+    }
+    const payload = await userInfoRes.json();
+    if (!payload || !payload.email) {
+      throw new Error('Invalid Google user info payload');
+    }
+    email = payload.email;
+    provider_id = payload.sub;
+    email_verified = payload.email_verified === true;
+    name = payload.name || email.split('@')[0];
+  } else {
+    throw new Error('Neither Google credential nor accessToken was provided');
+  }
 
   let [user] = await db.select().from(users).where(eq(users.email, email)).limit(1);
 
@@ -35,8 +64,8 @@ export const loginWithGoogleFlow = async (credential: string) => {
     await db.insert(users).values({
       id: userId,
       email,
-      username: payload.name || email.split('@')[0],
-      email_verified: email_verified === true,
+      username: name,
+      email_verified,
       auth_provider: 'google',
       provider_id,
       role,
@@ -44,14 +73,14 @@ export const loginWithGoogleFlow = async (credential: string) => {
     [user] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
     
     // Send welcome email to new Google users
-    await sendWelcomeEmail(email, payload.name || email.split('@')[0]).catch(console.error);
+    await sendWelcomeEmail(email, name).catch(console.error);
   } else if (user.auth_provider === 'email') {
     await db.update(users)
-      .set({ auth_provider: 'google', provider_id, email_verified: email_verified === true })
+      .set({ auth_provider: 'google', provider_id, email_verified })
       .where(eq(users.id, user.id));
     user.auth_provider = 'google';
     user.provider_id = provider_id;
-    user.email_verified = email_verified === true;
+    user.email_verified = email_verified;
   }
 
   const sessionId = crypto.randomUUID();

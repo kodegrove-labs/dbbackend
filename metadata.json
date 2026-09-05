@@ -1,6 +1,6 @@
 {
-  "name": "",
-  "description": "",
+  "name": "Centralized API & Authentication Dashboard",
+  "description": "Full-stack authentication, SMTP email delivery, API keys management, and database dashboard.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

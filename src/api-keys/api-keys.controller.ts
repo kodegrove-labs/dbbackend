@@ -23,7 +23,7 @@ router.post('/generate', async (req: AuthRequest, res: Response) => {
   }
 });
 
-router.get('/', async (req: AuthRequest, res: Response) => {
+router.get(['/', '/list'], async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.user!.id;
     const keys = await listApiKeys(userId);

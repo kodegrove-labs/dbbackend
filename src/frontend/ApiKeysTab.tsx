@@ -10,11 +10,23 @@ export default function ApiKeysTab() {
 
   const [errorMsg, setErrorMsg] = useState('');
 
+  const getAuthHeaders = (extra: Record<string, string> = {}) => {
+    const headers: Record<string, string> = { ...extra };
+    const token = localStorage.getItem('token');
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    return headers;
+  };
+
   const fetchKeys = async () => {
     setLoading(true);
     setErrorMsg('');
     try {
-      const res = await fetch('/api/keys');
+      const res = await fetch('/api/keys', {
+        headers: getAuthHeaders(),
+        credentials: 'include'
+      });
       if (res.status === 401) {
         setErrorMsg('Please log in via the Auth Testing tab to manage your API keys.');
         return;
@@ -46,7 +58,8 @@ export default function ApiKeysTab() {
     try {
       const res = await fetch('/api/keys/generate', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+        credentials: 'include',
         body: JSON.stringify({ name: newKeyName })
       });
       const data = await res.json();

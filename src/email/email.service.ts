@@ -7,26 +7,33 @@ import crypto from 'crypto';
 
 let etherealAccount: any = null;
 let transporter: any = null;
+let transporterIsReal: boolean | null = null;
 
 export function isRealSmtpConfigured(): boolean {
   return Boolean(process.env.SMTP_HOST && process.env.SMTP_USER);
 }
 
 export function getSmtpStatus() {
+  const isReal = isRealSmtpConfigured();
   return {
-    isConfigured: isRealSmtpConfigured(),
+    isConfigured: isReal,
     host: process.env.SMTP_HOST || 'smtp.ethereal.email (test sandbox)',
     port: parseInt(process.env.SMTP_PORT || '587'),
     from: process.env.SMTP_FROM || process.env.SMTP_USER || '"Auth Service" <no-reply@example.com>',
     user: process.env.SMTP_USER || 'ethereal test account',
-    isEthereal: !isRealSmtpConfigured() || (process.env.SMTP_HOST || '').includes('ethereal')
+    isEthereal: !isReal || (process.env.SMTP_HOST || '').includes('ethereal')
   };
 }
 
 async function getTransporter() {
-  if (transporter) return transporter;
+  const shouldBeReal = isRealSmtpConfigured();
 
-  if (isRealSmtpConfigured()) {
+  // Re-use existing transporter if mode has not changed
+  if (transporter && transporterIsReal === shouldBeReal) {
+    return transporter;
+  }
+
+  if (shouldBeReal) {
     const port = parseInt(process.env.SMTP_PORT || '587');
     transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST,
@@ -36,7 +43,11 @@ async function getTransporter() {
         user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASS,
       },
+      pool: true,
+      maxConnections: 3,
+      maxMessages: 100,
     });
+    transporterIsReal = true;
   } else {
     // Generate test account automatically
     if (!etherealAccount) {
@@ -51,6 +62,7 @@ async function getTransporter() {
         pass: etherealAccount.pass,
       },
     });
+    transporterIsReal = false;
   }
   return transporter;
 }

@@ -12,6 +12,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:flow": "tsx tests/flow.ts",
+    "test:api-key": "tsx tests/live-endpoint-checker.ts",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio"
   },
