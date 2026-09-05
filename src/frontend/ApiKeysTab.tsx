@@ -25,7 +25,11 @@ export default function ApiKeysTab() {
     try {
       const res = await fetch('/api/keys', {
         headers: getAuthHeaders(),
+        credentials: 'include'
       });
+      if (res.status === 401) {
+        setErrorMsg('Please log in via the Auth Testing tab to manage your API keys.');
+        return;
       }
       if (!res.ok) {
         throw new Error('Failed to fetch');
